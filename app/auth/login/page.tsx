@@ -53,7 +53,7 @@ export default function LoginPage() {
         
         // Redirect to dashboard after a short delay
         setTimeout(() => {
-          const user = result.user;
+          const user:any = result.user;
           if (user.role === 'admin') {
             router.push('/dashboard/admin');
           } else if (user.role === 'accountant') {
@@ -134,7 +134,7 @@ export default function LoginPage() {
                   type="email"
                   {...register('email')}
                   className="pl-10"
-                  error={errors.email?.message}
+      
                 />
               </div>
               {errors.email && (
@@ -160,7 +160,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   {...register('password')}
                   className="pl-10"
-                  error={errors.password?.message}
+    
                 />
               </div>
               {errors.password && (

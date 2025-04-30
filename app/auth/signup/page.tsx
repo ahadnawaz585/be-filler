@@ -19,8 +19,8 @@ import { Mail } from 'lucide-react';
 
 const signupSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  terms: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the terms and conditions" }),
+  terms: z.boolean().refine((val) => val === true, {
+    message: "You must accept the terms and conditions",
   }),
 });
 
@@ -99,7 +99,6 @@ export default function SignupPage() {
                     type="email"
                     {...register('email')}
                     className="pl-10"
-                    error={errors.email?.message}
                   />
                 </div>
                 {errors.email && (

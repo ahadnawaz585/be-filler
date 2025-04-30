@@ -18,13 +18,13 @@ export default function Dashboard() {
       router.push('/auth/login');
       return;
     }
-    
+
     // Get current user information
     const currentUser = getCurrentUser();
     if (currentUser) {
       setUser(currentUser);
     }
-    
+
     setLoading(false);
   }, [router]);
 
@@ -44,11 +44,13 @@ export default function Dashboard() {
           Here's an overview of your tax filing status and recent activity
         </p>
       </div>
-      
+
+      {/* Check UserStats for Progress component usage */}
       <div className="grid grid-cols-1 gap-6 mb-6">
         <UserStats />
       </div>
-      
+
+      {/* Check TaxFilingStatus and RecentActivity for Progress component usage */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <TaxFilingStatus />

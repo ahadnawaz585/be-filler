@@ -7,8 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { verifyOTP, generateOTP, sendOTP } from '@/lib/auth';
 
@@ -34,7 +32,7 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
   const [isResending, setIsResending] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
   const [storedOTP, setStoredOTP] = useState<string>('');
-  
+
   const {
     register,
     handleSubmit,
@@ -60,18 +58,18 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
       setStoredOTP(otp);
       await sendOTP(email, otp);
     };
-    
+
     sendInitialOTP();
   }, [email]);
 
   // Handle countdown timer
   useEffect(() => {
     if (timeLeft <= 0) return;
-    
+
     const timerId = setTimeout(() => {
       setTimeLeft(timeLeft - 1);
     }, 1000);
-    
+
     return () => clearTimeout(timerId);
   }, [timeLeft]);
 
@@ -92,7 +90,7 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
   const onSubmit = async (data: OTPFormValues) => {
     try {
       const enteredOTP = Object.values(data).join('');
-      
+
       if (verifyOTP(email, enteredOTP, storedOTP)) {
         toast({
           title: "Success",
@@ -125,13 +123,13 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
       const otp = generateOTP();
       setStoredOTP(otp);
       await sendOTP(email, otp);
-      
+
       toast({
         title: "OTP Resent",
         description: "A new OTP has been sent to your email.",
         variant: "default",
       });
-      
+
       setTimeLeft(60);
     } catch (error) {
       toast({
@@ -152,7 +150,7 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
           Enter the 6-digit code sent to <span className="font-medium">{email}</span>
         </p>
       </div>
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-4">
           <div className="flex justify-center gap-2">
@@ -160,7 +158,7 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
               const fieldName = `digit${index + 1}` as keyof OTPFormValues;
               const nextField = index < 5 ? `digit${index + 2}` : undefined;
               const prevField = index > 0 ? `digit${index}` : undefined;
-              
+
               return (
                 <div key={index} className="w-12">
                   <Input
@@ -177,25 +175,30 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
               );
             })}
           </div>
-          
+
           {Object.keys(errors).length > 0 && (
             <p className="text-sm text-destructive text-center">
               Please enter all digits correctly
             </p>
           )}
         </div>
-        
+
         <div className="space-y-4">
-          <Button type="submit" className="w-full bg-[#af0e0e] hover:bg-[#8a0b0b]" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            className="w-full bg-[#af0e0e] hover:bg-[#8a0b0b]"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Verifying..." : "Verify OTP"}
           </Button>
-          
+
           <div className="text-center space-y-2">
             <div className="flex items-center gap-2 justify-center">
-              <Progress value={(timeLeft / 60) * 100} className="w-32 h-2" />
-              <span className="text-sm text-muted-foreground">{timeLeft}s</span>
+              <span className="text-sm text-muted-foreground">
+                Time remaining: {timeLeft}s
+              </span>
             </div>
-            
+
             <Button
               type="button"
               variant="link"

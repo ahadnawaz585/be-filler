@@ -136,7 +136,6 @@ export function UserForm({ email }: UserFormProps) {
             id="name"
             placeholder="John Doe"
             {...register('name')}
-            error={errors.name?.message}
           />
           {errors.name && (
             <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -150,7 +149,6 @@ export function UserForm({ email }: UserFormProps) {
             type="password"
             placeholder="••••••••"
             {...register('password')}
-            error={errors.password?.message}
           />
           {errors.password && (
             <p className="text-sm text-destructive">{errors.password.message}</p>
@@ -164,7 +162,6 @@ export function UserForm({ email }: UserFormProps) {
             type="password"
             placeholder="••••••••"
             {...register('confirmPassword')}
-            error={errors.confirmPassword?.message}
           />
           {errors.confirmPassword && (
             <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
@@ -195,7 +192,6 @@ export function UserForm({ email }: UserFormProps) {
               placeholder="3XX XXXXXXX"
               {...register('phoneNumber')}
               className="flex-1"
-              error={errors.phoneNumber?.message}
             />
           </div>
           {errors.phoneNumber && (
@@ -210,7 +206,6 @@ export function UserForm({ email }: UserFormProps) {
             placeholder="XXXXX-XXXXXXX-X"
             value={watchedCNIC}
             onChange={handleCNICChange}
-            error={errors.cnic?.message}
           />
           {errors.cnic && (
             <p className="text-sm text-destructive">{errors.cnic.message}</p>

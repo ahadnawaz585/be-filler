@@ -73,7 +73,7 @@ export function RecentActivity() {
       </CardHeader>
       <CardContent>
         <div className="space-y-5">
-          {activities.map((activity, index) => (
+          {activities.map((activity:any, index) => (
             <div key={activity.id} className="flex gap-4">
               <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
                 activity.type === 'tax-return' 

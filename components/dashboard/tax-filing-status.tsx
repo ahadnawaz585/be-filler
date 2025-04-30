@@ -1,33 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Progress } from "@/components/ui/progress";
 import { FileCheck, ArrowRight, CalendarClock, Check, AlertCircle } from "lucide-react";
 import { taxYears } from "@/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function TaxFilingStatus() {
   const [selectedYear, setSelectedYear] = useState(taxYears[0].value);
-  
+
   // Time remaining calculation
   const currentDate = new Date();
-  const deadlineDate = new Date(parseInt(selectedYear.split('-')[1]), 8, 30); // September 30th
+  const deadlineDate = new Date(parseInt(selectedYear.split("-")[1]), 8, 30); // September 30th
   const timeRemaining = deadlineDate.getTime() - currentDate.getTime();
   const daysRemaining = Math.max(0, Math.ceil(timeRemaining / (1000 * 60 * 60 * 24)));
-  
+
   // Mock filing progress data
-  const filingProgress = 60; // percentage
-  
+  const filingProgress = 75; // percentage
+
   // Filing steps
   const filingSteps = [
     { id: 1, name: "Registration", completed: true },
@@ -37,7 +42,7 @@ export function TaxFilingStatus() {
     { id: 5, name: "Assets & Liabilities", completed: false },
     { id: 6, name: "Review & Submit", completed: false },
   ];
-  
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -81,25 +86,30 @@ export function TaxFilingStatus() {
               </div>
             </div>
           </div>
-          
-          {/* Progress Bar */}
+
+          {/* Progress Bar (Replaced with Custom CSS) */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium">Overall Progress</span>
               <span className="text-sm font-medium">{filingProgress}%</span>
             </div>
-            <Progress value={filingProgress} className="h-2" />
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#af0e0e] transition-all"
+                style={{ width: `${filingProgress}%` }}
+              />
+            </div>
           </div>
-          
+
           {/* Filing Steps */}
           <div className="space-y-4">
             <h3 className="font-medium">Filing Steps</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filingSteps.map((step) => (
-                <div 
+                <div
                   key={step.id}
                   className={`flex items-center p-3 rounded-lg border ${
-                    step.completed ? 'bg-[#af0e0e]/5 border-[#af0e0e]/20' : 'bg-muted border-border'
+                    step.completed ? "bg-[#af0e0e]/5 border-[#af0e0e]/20" : "bg-muted border-border"
                   }`}
                 >
                   {step.completed ? (
@@ -107,21 +117,24 @@ export function TaxFilingStatus() {
                   ) : (
                     <div className="h-5 w-5 rounded-full border-2 border-muted-foreground mr-3 flex-shrink-0"></div>
                   )}
-                  <span className={step.completed ? 'font-medium' : 'text-muted-foreground'}>
+                  <span className={step.completed ? "font-medium" : "text-muted-foreground"}>
                     {step.name}
                   </span>
                 </div>
               ))}
             </div>
           </div>
-          
+
           {/* Alert */}
           {daysRemaining < 30 && (
             <div className="flex items-start p-4 rounded-lg bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
               <AlertCircle className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="font-medium">Deadline approaching</p>
-                <p className="text-sm">The deadline for filing your tax return is approaching. Complete your return soon to avoid penalties.</p>
+                <p className="text-sm">
+                  The deadline for filing your tax return is approaching. Complete your return soon to
+                  avoid penalties.
+                </p>
               </div>
             </div>
           )}
