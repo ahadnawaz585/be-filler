@@ -1,11 +1,11 @@
-"use client";
+"use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockRecentFilers } from "@/lib/constants";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { FileCheck, Clock } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { mockRecentFilers } from "@/lib/constants"
+import { formatCurrency, formatDate } from "@/lib/utils"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { FileCheck, Clock } from "lucide-react"
 
 export function RecentFilers() {
   return (
@@ -14,9 +14,7 @@ export function RecentFilers() {
         <div className="flex justify-between items-center">
           <div>
             <CardTitle>Recent Tax Filers</CardTitle>
-            <CardDescription>
-              Most recent tax returns filed
-            </CardDescription>
+            <CardDescription>Most recent tax returns filed</CardDescription>
           </div>
           <div className="flex items-center text-muted-foreground text-sm">
             <Clock className="h-4 w-4 mr-1" /> Last updated: {formatDate(new Date().toISOString())}
@@ -47,12 +45,12 @@ export function RecentFilers() {
                   <Badge
                     variant="outline"
                     className={
-                      filer.status === 'Completed'
-                        ? 'border-green-500 text-green-500'
-                        : 'border-yellow-500 text-yellow-500'
+                      filer.status === "Completed"
+                        ? "border-green-500 text-green-500"
+                        : "border-yellow-500 text-yellow-500"
                     }
                   >
-                    {filer.status === 'Completed' ? (
+                    {filer.status === "Completed" ? (
                       <FileCheck className="h-3 w-3 mr-1" />
                     ) : (
                       <Clock className="h-3 w-3 mr-1" />
@@ -66,5 +64,5 @@ export function RecentFilers() {
         </Table>
       </CardContent>
     </Card>
-  );
+  )
 }

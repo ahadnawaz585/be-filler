@@ -1,37 +1,24 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { FileCheck, ArrowRight, CalendarClock, Check, AlertCircle } from "lucide-react";
-import { taxYears } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useState } from "react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { FileCheck, ArrowRight, CalendarClock, Check, AlertCircle } from "lucide-react"
+import { taxYears } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export function TaxFilingStatus() {
-  const [selectedYear, setSelectedYear] = useState(taxYears[0].value);
+  const [selectedYear, setSelectedYear] = useState(taxYears[0].value)
 
   // Time remaining calculation
-  const currentDate = new Date();
-  const deadlineDate = new Date(parseInt(selectedYear.split("-")[1]), 8, 30); // September 30th
-  const timeRemaining = deadlineDate.getTime() - currentDate.getTime();
-  const daysRemaining = Math.max(0, Math.ceil(timeRemaining / (1000 * 60 * 60 * 24)));
+  const currentDate = new Date()
+  const deadlineDate = new Date(Number.parseInt(selectedYear.split("-")[1]), 8, 30) // September 30th
+  const timeRemaining = deadlineDate.getTime() - currentDate.getTime()
+  const daysRemaining = Math.max(0, Math.ceil(timeRemaining / (1000 * 60 * 60 * 24)))
 
   // Mock filing progress data
-  const filingProgress = 75; // percentage
+  const filingProgress = 75 // percentage
 
   // Filing steps
   const filingSteps = [
@@ -41,7 +28,7 @@ export function TaxFilingStatus() {
     { id: 4, name: "Deductions & Credits", completed: false },
     { id: 5, name: "Assets & Liabilities", completed: false },
     { id: 6, name: "Review & Submit", completed: false },
-  ];
+  ]
 
   return (
     <Card className="w-full">
@@ -49,9 +36,7 @@ export function TaxFilingStatus() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <CardTitle className="text-xl font-semibold">Tax Filing Progress</CardTitle>
-            <CardDescription>
-              Complete your tax return for the selected tax year
-            </CardDescription>
+            <CardDescription>Complete your tax return for the selected tax year</CardDescription>
           </div>
           <Select value={selectedYear} onValueChange={setSelectedYear}>
             <SelectTrigger className="w-[160px]">
@@ -94,10 +79,7 @@ export function TaxFilingStatus() {
               <span className="text-sm font-medium">{filingProgress}%</span>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#af0e0e] transition-all"
-                style={{ width: `${filingProgress}%` }}
-              />
+              <div className="h-full bg-[#af0e0e] transition-all" style={{ width: `${filingProgress}%` }} />
             </div>
           </div>
 
@@ -117,9 +99,7 @@ export function TaxFilingStatus() {
                   ) : (
                     <div className="h-5 w-5 rounded-full border-2 border-muted-foreground mr-3 flex-shrink-0"></div>
                   )}
-                  <span className={step.completed ? "font-medium" : "text-muted-foreground"}>
-                    {step.name}
-                  </span>
+                  <span className={step.completed ? "font-medium" : "text-muted-foreground"}>{step.name}</span>
                 </div>
               ))}
             </div>
@@ -132,8 +112,7 @@ export function TaxFilingStatus() {
               <div>
                 <p className="font-medium">Deadline approaching</p>
                 <p className="text-sm">
-                  The deadline for filing your tax return is approaching. Complete your return soon to
-                  avoid penalties.
+                  The deadline for filing your tax return is approaching. Complete your return soon to avoid penalties.
                 </p>
               </div>
             </div>
@@ -155,5 +134,5 @@ export function TaxFilingStatus() {
         </div>
       </CardFooter>
     </Card>
-  );
+  )
 }

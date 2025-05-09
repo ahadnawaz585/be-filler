@@ -47,11 +47,18 @@ const Header = () => {
   ]
 
   const serviceLinks = [
-    { name: "Tax Filing", path: "/services/tax-filing" },
+    {
+      name: "Income Tax Returns",
+      path: "/services/income-tax-returns",
+      subServices: [
+        { name: "Tax Filing", path: "/services/income-tax-returns/tax-filing" },
+        { name: "Wealth Statement", path: "/services/income-tax-returns/wealth-statement" },
+      ],
+    },
     { name: "Tax Registration", path: "/services/tax-registration" },
-    { name: "Wealth Statement", path: "/services/wealth-statement" },
     { name: "Corporate Services", path: "/services/corporate" },
     { name: "Compliance Advisory", path: "/services/compliance" },
+    { name: "Certificate Issuance", path: "/services/certificate-issuance" },
   ]
 
   const loggedInLinks = {
@@ -63,8 +70,8 @@ const Header = () => {
   return (
     <header
       className={cn("fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300", {
-        "bg-background/80 backdrop-blur-md border-b shadow-sm": isScrolled,
-        "bg-transparent": !isScrolled,
+        "bg-background border-b shadow-sm": isScrolled,
+        "bg-background": !isScrolled,
       })}
     >
       <div className="container mx-auto px-4 md:px-6">
@@ -98,15 +105,36 @@ const Header = () => {
                     </button>
                     {/* Add a transparent bridge to prevent gap between button and dropdown */}
                     <div className="absolute left-0 h-2 w-full"></div>
-                    <div className="absolute left-0 top-full w-48 rounded-md shadow-lg py-1 bg-background border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
+                    <div className="absolute left-0 top-full w-64 rounded-md shadow-lg py-1 bg-background border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
                       {serviceLinks.map((service) => (
-                        <Link
-                          key={service.name}
-                          href={service.path}
-                          className="block px-4 py-2 text-sm hover:bg-accent"
-                        >
-                          {service.name}
-                        </Link>
+                        <React.Fragment key={service.name}>
+                          {service.subServices ? (
+                            <div className="relative group/nested">
+                              <Link
+                                href={service.path}
+                                className="flex items-center justify-between px-4 py-2 text-sm hover:bg-accent"
+                              >
+                                <span>{service.name}</span>
+                                <ChevronDown className="h-4 w-4" />
+                              </Link>
+                              <div className="absolute left-full top-0 w-48 rounded-md shadow-lg py-1 bg-background border border-border opacity-0 invisible group-hover/nested:opacity-100 group-hover/nested:visible transition-all duration-150">
+                                {service.subServices.map((subService) => (
+                                  <Link
+                                    key={subService.name}
+                                    href={subService.path}
+                                    className="block px-4 py-2 text-sm hover:bg-accent"
+                                  >
+                                    {subService.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <Link href={service.path} className="block px-4 py-2 text-sm hover:bg-accent">
+                              {service.name}
+                            </Link>
+                          )}
+                        </React.Fragment>
                       ))}
                     </div>
                   </div>
@@ -201,14 +229,39 @@ const Header = () => {
                     </button>
                     <div className="pl-4 mt-1 space-y-1">
                       {serviceLinks.map((service) => (
-                        <Link
-                          key={service.name}
-                          href={service.path}
-                          className="block px-3 py-2 text-sm rounded-md hover:bg-accent"
-                          onClick={toggleMenu}
-                        >
-                          {service.name}
-                        </Link>
+                        <React.Fragment key={service.name}>
+                          {service.subServices ? (
+                            <>
+                              <Link
+                                href={service.path}
+                                className="block px-3 py-2 text-sm font-medium rounded-md hover:bg-accent"
+                                onClick={toggleMenu}
+                              >
+                                {service.name}
+                              </Link>
+                              <div className="pl-4 mt-1 space-y-1">
+                                {service.subServices.map((subService) => (
+                                  <Link
+                                    key={subService.name}
+                                    href={subService.path}
+                                    className="block px-3 py-2 text-xs rounded-md hover:bg-accent"
+                                    onClick={toggleMenu}
+                                  >
+                                    {subService.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            </>
+                          ) : (
+                            <Link
+                              href={service.path}
+                              className="block px-3 py-2 text-sm rounded-md hover:bg-accent"
+                              onClick={toggleMenu}
+                            >
+                              {service.name}
+                            </Link>
+                          )}
+                        </React.Fragment>
                       ))}
                     </div>
                   </div>

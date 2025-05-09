@@ -1,8 +1,8 @@
-import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, CheckCircle, Users, Trophy, Target } from "lucide-react";
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { ArrowRight, CheckCircle, Users, Trophy, Target } from "lucide-react"
 
 export default function AboutPage() {
   const stats = [
@@ -10,7 +10,7 @@ export default function AboutPage() {
     { label: "Tax Returns Filed", value: "50,000+", icon: CheckCircle },
     { label: "Years of Experience", value: "5+", icon: Trophy },
     { label: "Success Rate", value: "99%", icon: Target },
-  ];
+  ]
 
   const values = [
     {
@@ -29,20 +29,17 @@ export default function AboutPage() {
       title: "Support",
       description: "Dedicated customer service to assist you every step of the way.",
     },
-  ];
+  ]
 
   return (
     <main className="container mx-auto px-4 py-16 mt-16">
       {/* Hero Section */}
       <div className="flex flex-col lg:flex-row items-center gap-12 mb-16">
         <div className="lg:w-1/2">
-          <h1 className="text-4xl font-bold tracking-tight mb-6">
-            Pakistan's Leading Tax Filing Platform
-          </h1>
+          <h1 className="text-4xl font-bold tracking-tight mb-6">Pakistan's Leading Tax Filing Platform</h1>
           <p className="text-lg text-muted-foreground mb-8">
-            At Befiler, we're committed to simplifying tax compliance for individuals
-            and businesses across Pakistan. Our platform combines technology with
-            expertise to make tax filing accessible, affordable, and hassle-free.
+            At Befiler, we're committed to simplifying tax compliance for individuals and businesses across Pakistan.
+            Our platform combines technology with expertise to make tax filing accessible, affordable, and hassle-free.
           </p>
           <Link href="/auth/signup">
             <Button className="bg-[#af0e0e] hover:bg-[#8a0b0b]">
@@ -80,8 +77,8 @@ export default function AboutPage() {
       <div className="text-center mb-12">
         <h2 className="text-3xl font-bold mb-4">Our Values</h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-          These core values guide everything we do at Befiler, ensuring we deliver
-          the best possible service to our clients.
+          These core values guide everything we do at Befiler, ensuring we deliver the best possible service to our
+          clients.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {values.map((value, index) => (
@@ -113,5 +110,5 @@ export default function AboutPage() {
         </div>
       </div>
     </main>
-  );
+  )
 }

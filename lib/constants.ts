@@ -1,111 +1,118 @@
 export const taxServices = [
   {
     id: 1,
-    title: "Income Tax Filing",
-    description: "File your income tax returns easily and accurately",
+    title: "Income Tax Returns",
+    description: "Complete income tax return filing including tax filing and wealth statement",
     icon: "File",
-    link: "/services/tax-filing"
+    link: "/services/income-tax-returns",
   },
   {
     id: 2,
     title: "Tax Registration",
     description: "Get registered with FBR and obtain your NTN",
     icon: "ClipboardCheck",
-    link: "/services/tax-registration"
-  },
-  {
-    id: 3,
-    title: "Wealth Statement",
-    description: "Prepare and file comprehensive wealth statements",
-    icon: "BarChart4",
-    link: "/services/wealth-statement"
+    link: "/services/tax-registration",
   },
   {
     id: 4,
     title: "Corporate Services",
     description: "Company registration, SECP compliance & sales tax registration",
     icon: "Building2",
-    link: "/services/corporate"
+    link: "/services/corporate",
   },
   {
     id: 5,
     title: "Compliance Advisory",
     description: "Expert advice on tax compliance and FBR regulations",
     icon: "Lightbulb",
-    link: "/services/compliance"
+    link: "/services/compliance",
   },
   {
     id: 6,
     title: "Certificate Issuance",
     description: "Active taxpayer certificates and other documentation",
     icon: "Award",
-    link: "/services/certificate"
-  }
-];
+    link: "/services/certificate",
+  },
+]
 
 export const testimonials = [
   {
     id: 1,
     name: "Ali Ahmed",
     title: "Business Owner",
-    content: "Befiler has made tax filing so much easier for my business. The interface is intuitive and the customer support is excellent!",
+    content:
+      "Befiler has made tax filing so much easier for my business. The interface is intuitive and the customer support is excellent!",
     rating: 5,
-    avatar: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    avatar:
+      "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
   },
   {
     id: 2,
     name: "Sarah Khan",
     title: "Freelance Developer",
-    content: "As a freelancer, I was always confused about tax filing. Befiler simplified the entire process for me. Highly recommended!",
+    content:
+      "As a freelancer, I was always confused about tax filing. Befiler simplified the entire process for me. Highly recommended!",
     rating: 5,
-    avatar: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    avatar:
+      "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
   },
   {
     id: 3,
     name: "Rizwan Malik",
     title: "Corporate Executive",
-    content: "Our company has been using Befiler for tax compliance for the past 2 years. Their service is top-notch and always up-to-date with the latest regulations.",
+    content:
+      "Our company has been using Befiler for tax compliance for the past 2 years. Their service is top-notch and always up-to-date with the latest regulations.",
     rating: 4,
-    avatar: "https://images.pexels.com/photos/3778603/pexels-photo-3778603.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    avatar:
+      "https://images.pexels.com/photos/3778603/pexels-photo-3778603.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
   },
   {
     id: 4,
     name: "Fatima Zaidi",
     title: "Finance Professional",
-    content: "The wealth statement feature is extremely detailed and accurate. Befiler has made tax season stress-free for me and my clients.",
+    content:
+      "The wealth statement feature is extremely detailed and accurate. Befiler has made tax season stress-free for me and my clients.",
     rating: 5,
-    avatar: "https://images.pexels.com/photos/3763188/pexels-photo-3763188.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-  }
-];
+    avatar:
+      "https://images.pexels.com/photos/3763188/pexels-photo-3763188.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  },
+]
 
 export const faqItems = [
   {
     question: "How do I register for tax filing?",
-    answer: "You can register by clicking on the Sign Up button, providing your email, and completing the registration process. You'll receive a verification email to confirm your account."
+    answer:
+      "You can register by clicking on the Sign Up button, providing your email, and completing the registration process. You'll receive a verification email to confirm your account.",
   },
   {
     question: "What documents do I need for filing my tax return?",
-    answer: "You'll need your CNIC, details of your income sources, bank statements, property documents (if applicable), investment details, and information about any assets you own."
+    answer:
+      "You'll need your CNIC, details of your income sources, bank statements, property documents (if applicable), investment details, and information about any assets you own.",
   },
   {
     question: "How long does it take to file a tax return through Befiler?",
-    answer: "Once you've gathered all the necessary documents, filing a tax return through our platform usually takes 30-45 minutes for individuals and slightly longer for businesses."
+    answer:
+      "Once you've gathered all the necessary documents, filing a tax return through our platform usually takes 30-45 minutes for individuals and slightly longer for businesses.",
   },
   {
     question: "Can I file for previous years' taxes?",
-    answer: "Yes, Befiler supports filing tax returns for previous years. You can select the specific tax year during the filing process."
+    answer:
+      "Yes, Befiler supports filing tax returns for previous years. You can select the specific tax year during the filing process.",
   },
   {
     question: "What if I receive a notice from FBR after filing?",
-    answer: "Our compliance team provides assistance with responding to notices. You can upload the notice in your dashboard and our experts will guide you through the response process."
+    answer:
+      "Our compliance team provides assistance with responding to notices. You can upload the notice in your dashboard and our experts will guide you through the response process.",
   },
   {
     question: "Is my data secure with Befiler?",
-    answer: "Yes, we use industry-standard encryption and security measures to protect all your data. Your information is never shared with third parties without your consent."
-  }
-];
+    answer:
+      "Yes, we use industry-standard encryption and security measures to protect all your data. Your information is never shared with third parties without your consent.",
+  },
+]
 
-export const userRoles = ["user", "admin", "accountant"];
+export const userRoles = ["user", "admin", "accountant"]
 
 export const countryCodes = [
   { code: "+92", country: "Pakistan" },
@@ -118,7 +125,7 @@ export const countryCodes = [
   { code: "+65", country: "Singapore" },
   { code: "+61", country: "Australia" },
   { code: "+49", country: "Germany" },
-];
+]
 
 export const mockTaxReturns = [
   {
@@ -145,7 +152,7 @@ export const mockTaxReturns = [
     taxAmount: 32000,
     refundAmount: 0,
   },
-];
+]
 
 export const mockWealthStatements = [
   {
@@ -164,7 +171,7 @@ export const mockWealthStatements = [
     totalAssets: 12500000,
     totalLiabilities: 2800000,
   },
-];
+]
 
 export const mockNotifications = [
   {
@@ -188,7 +195,7 @@ export const mockNotifications = [
     date: "2023-08-25",
     read: false,
   },
-];
+]
 
 export const mockAdminUsers = [
   {
@@ -236,7 +243,7 @@ export const mockAdminUsers = [
     status: "Active",
     filings: 0,
   },
-];
+]
 
 export const mockRecentFilers = [
   {
@@ -263,7 +270,7 @@ export const mockRecentFilers = [
     taxAmount: 28500,
     status: "Under Review",
   },
-];
+]
 
 export const mockAccountantClients = [
   {
@@ -298,7 +305,7 @@ export const mockAccountantClients = [
     latestFiling: "-",
     status: "Not Started",
   },
-];
+]
 
 export const mockMonthlyFilings = [
   { month: "Jan", filings: 45 },
@@ -313,7 +320,7 @@ export const mockMonthlyFilings = [
   { month: "Oct", filings: 95 },
   { month: "Nov", filings: 68 },
   { month: "Dec", filings: 85 },
-];
+]
 
 export const mockRevenueData = [
   { month: "Jan", revenue: 150000 },
@@ -328,4 +335,4 @@ export const mockRevenueData = [
   { month: "Oct", revenue: 350000 },
   { month: "Nov", revenue: 250000 },
   { month: "Dec", revenue: 280000 },
-];
+]

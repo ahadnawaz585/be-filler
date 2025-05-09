@@ -1,15 +1,15 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, FileText, Calculator, Clock, CheckCircle } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ArrowRight, FileText, Calculator, Clock, CheckCircle } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
 
 export default function TaxFilingPage() {
-  const [activeTab, setActiveTab] = useState("individual");
+  const [activeTab, setActiveTab] = useState("individual")
 
   const features = {
     individual: [
@@ -19,6 +19,7 @@ export default function TaxFilingPage() {
       "Document upload assistance",
       "Real-time status tracking",
       "Expert support available",
+      "Wealth Statement Filing Included",
     ],
     business: [
       "Corporate tax filing",
@@ -36,7 +37,7 @@ export default function TaxFilingPage() {
       "Payment proof management",
       "Annual planning support",
     ],
-  };
+  }
 
   const process = [
     {
@@ -59,19 +60,17 @@ export default function TaxFilingPage() {
       description: "Receive your filed return copy and payment challan",
       icon: CheckCircle,
     },
-  ];
+  ]
 
   return (
     <main className="container mx-auto px-4 py-16 mt-16">
       {/* Hero Section */}
-      <div className="flex flex-col lg:flex-row items-center gap-12 mb-16">
+      <div className="relative py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-red-900 to-red-700 text-white">
         <div className="lg:w-1/2">
-          <h1 className="text-4xl font-bold tracking-tight mb-6">
-            Professional Tax Filing Services
-          </h1>
+          <h1 className="text-4xl font-bold tracking-tight mb-6">Professional Tax Filing Services</h1>
           <p className="text-lg text-muted-foreground mb-8">
-            File your taxes with confidence using our comprehensive tax filing service.
-            Expert guidance and support available throughout the process.
+            File your taxes with confidence using our comprehensive tax filing service. Expert guidance and support
+            available throughout the process. Includes Wealth Statement Filing as part of Income Tax Return.
           </p>
           <div className="flex gap-4">
             <Link href="/auth/signup">
@@ -107,9 +106,7 @@ export default function TaxFilingPage() {
             <TabsContent key={key} value={key}>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-2xl">
-                    {key.charAt(0).toUpperCase() + key.slice(1)} Tax Filing
-                  </CardTitle>
+                  <CardTitle className="text-2xl">{key.charAt(0).toUpperCase() + key.slice(1)} Tax Filing</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -163,5 +160,5 @@ export default function TaxFilingPage() {
         </div>
       </div>
     </main>
-  );
+  )
 }

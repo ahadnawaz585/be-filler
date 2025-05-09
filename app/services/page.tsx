@@ -1,16 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { 
-  FileText, 
-  UserPlus, 
-  BarChart4, 
-  Building2, 
-  Scale, 
-  Award,
-  ArrowRight 
-} from "lucide-react";
-import { taxServices } from "@/lib/constants";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { FileText, UserPlus, BarChart4, Building2, Scale, Award, ArrowRight } from "lucide-react"
+import { taxServices } from "@/lib/constants"
 
 export default function ServicesPage() {
   return (
@@ -18,8 +10,8 @@ export default function ServicesPage() {
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold tracking-tight mb-4">Our Services</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Comprehensive tax solutions for individuals and businesses in Pakistan. 
-          From simple tax returns to complex compliance matters, we've got you covered.
+          Comprehensive tax solutions for individuals and businesses in Pakistan. From simple tax returns to complex
+          compliance matters, we've got you covered.
         </p>
       </div>
 
@@ -28,12 +20,12 @@ export default function ServicesPage() {
           <Card key={index} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="w-12 h-12 bg-[#af0e0e]/10 rounded-lg flex items-center justify-center mb-4">
-                {service.icon === 'File' && <FileText className="w-6 h-6 text-[#af0e0e]" />}
-                {service.icon === 'ClipboardCheck' && <UserPlus className="w-6 h-6 text-[#af0e0e]" />}
-                {service.icon === 'BarChart4' && <BarChart4 className="w-6 h-6 text-[#af0e0e]" />}
-                {service.icon === 'Building2' && <Building2 className="w-6 h-6 text-[#af0e0e]" />}
-                {service.icon === 'Lightbulb' && <Scale className="w-6 h-6 text-[#af0e0e]" />}
-                {service.icon === 'Award' && <Award className="w-6 h-6 text-[#af0e0e]" />}
+                {service.icon === "File" && <FileText className="w-6 h-6 text-[#af0e0e]" />}
+                {service.icon === "ClipboardCheck" && <UserPlus className="w-6 h-6 text-[#af0e0e]" />}
+                {service.icon === "BarChart4" && <BarChart4 className="w-6 h-6 text-[#af0e0e]" />}
+                {service.icon === "Building2" && <Building2 className="w-6 h-6 text-[#af0e0e]" />}
+                {service.icon === "Lightbulb" && <Scale className="w-6 h-6 text-[#af0e0e]" />}
+                {service.icon === "Award" && <Award className="w-6 h-6 text-[#af0e0e]" />}
               </div>
               <CardTitle className="text-xl">{service.title}</CardTitle>
               <CardDescription className="mt-2">{service.description}</CardDescription>
@@ -61,5 +53,5 @@ export default function ServicesPage() {
         </Link>
       </div>
     </main>
-  );
+  )
 }

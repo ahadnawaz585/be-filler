@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import Link from 'next/link';
-import { ArrowRight, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import Link from "next/link"
+import { ArrowRight, CheckCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
 
 const CTASection = () => {
   const benefits = [
@@ -12,16 +12,16 @@ const CTASection = () => {
     "Secure handling of your sensitive information",
     "Affordable service packages for all needs",
     "Compliance with latest FBR regulations",
-    "Detailed support for wealth statements"
-  ];
-  
+    "Detailed support for wealth statements",
+  ]
+
   return (
     <section className="py-16 md:py-24 bg-background relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-full h-full bg-[#af0e0e]/5 -z-10" />
       <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#af0e0e]/10 rounded-full -z-10 blur-3xl" />
       <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#af0e0e]/10 rounded-full -z-10 blur-3xl" />
-      
+
       <div className="container px-4 mx-auto relative z-10">
         <div className="max-w-4xl mx-auto bg-card rounded-xl p-8 md:p-12 shadow-lg border">
           <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
@@ -36,10 +36,10 @@ const CTASection = () => {
                 <p className="text-muted-foreground mb-6">
                   Join thousands of satisfied customers who have simplified their tax filing process with Befiler.
                 </p>
-                
+
                 <ul className="space-y-2 mb-8">
                   {benefits.map((benefit, index) => (
-                    <motion.li 
+                    <motion.li
                       key={index}
                       initial={{ opacity: 0, x: -20 }}
                       whileInView={{ opacity: 1, x: 0 }}
@@ -52,7 +52,7 @@ const CTASection = () => {
                     </motion.li>
                   ))}
                 </ul>
-                
+
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link href="/auth/signup">
                     <Button size="lg" className="bg-[#af0e0e] hover:bg-[#8a0b0b] w-full sm:w-auto">
@@ -67,7 +67,7 @@ const CTASection = () => {
                 </div>
               </motion.div>
             </div>
-            
+
             <div className="flex-1 lg:flex-none lg:w-1/3 hidden lg:block">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -92,7 +92,7 @@ const CTASection = () => {
         </div>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default CTASection;
+export default CTASection

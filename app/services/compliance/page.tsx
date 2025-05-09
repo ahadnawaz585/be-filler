@@ -1,11 +1,10 @@
-"use client";
+"use client"
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, CheckCircle, AlertTriangle, FileText, Shield, Scale } from 'lucide-react';
+import Link from "next/link"
+import { motion } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowRight, CheckCircle, AlertTriangle, FileText, Shield, Scale } from "lucide-react"
 
 export default function CompliancePage() {
   const complianceServices = [
@@ -29,7 +28,7 @@ export default function CompliancePage() {
       description: "Professional guidance on tax laws and regulatory frameworks.",
       icon: Scale,
     },
-  ];
+  ]
 
   const benefits = [
     "Minimize compliance risks and penalties",
@@ -38,7 +37,7 @@ export default function CompliancePage() {
     "Proactive risk management",
     "Dedicated compliance support",
     "Regular compliance health checks",
-  ];
+  ]
 
   return (
     <div className="min-h-screen pt-24 pb-16">
@@ -46,26 +45,23 @@ export default function CompliancePage() {
       <section className="relative py-12 bg-[#af0e0e]/5">
         <div className="container px-4 mx-auto">
           <div className="max-w-3xl mx-auto text-center">
-            <motion.h1 
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-4xl font-bold mb-6"
             >
               Tax Compliance & Advisory Services
             </motion.h1>
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
               className="text-lg text-muted-foreground mb-8"
             >
-              Stay compliant with FBR regulations and handle tax matters professionally with our expert advisory services.
+              Stay compliant with FBR regulations and handle tax matters professionally with our expert advisory
+              services.
             </motion.p>
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <Link href="/auth/signup">
                 <Button size="lg" className="bg-[#af0e0e] hover:bg-[#8a0b0b]">
                   Get Started <ArrowRight className="ml-2 h-4 w-4" />
@@ -115,9 +111,7 @@ export default function CompliancePage() {
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">Why Choose Our Compliance Services?</h2>
-              <p className="text-muted-foreground">
-                Expert guidance and support to ensure your tax compliance
-              </p>
+              <p className="text-muted-foreground">Expert guidance and support to ensure your tax compliance</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -146,7 +140,8 @@ export default function CompliancePage() {
               <div className="text-center space-y-6">
                 <h3 className="text-2xl font-bold">Ready to ensure your tax compliance?</h3>
                 <p className="text-muted-foreground">
-                  Get started with our compliance services today and ensure your business stays aligned with tax regulations.
+                  Get started with our compliance services today and ensure your business stays aligned with tax
+                  regulations.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link href="/auth/signup">
@@ -166,5 +161,5 @@ export default function CompliancePage() {
         </div>
       </section>
     </div>
-  );
+  )
 }

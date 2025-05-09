@@ -1,8 +1,20 @@
-"use client";
+"use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { mockMonthlyFilings } from "@/lib/constants";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts"
+import { mockMonthlyFilings } from "@/lib/constants"
 
 export function FilingStats() {
   // Mock data for pie chart
@@ -10,14 +22,14 @@ export function FilingStats() {
     { name: "Completed", value: 158, color: "var(--chart-1)" },
     { name: "Under Review", value: 42, color: "var(--chart-2)" },
     { name: "Not Started", value: 23, color: "var(--chart-3)" },
-  ];
+  ]
 
   // Mock data for filing types
   const filingTypesData = [
     { name: "Income Tax", value: 120, color: "var(--chart-4)" },
     { name: "Wealth Statement", value: 65, color: "var(--chart-5)" },
     { name: "Corporate Tax", value: 38, color: "var(--chart-1)" },
-  ];
+  ]
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -25,9 +37,7 @@ export function FilingStats() {
       <Card>
         <CardHeader>
           <CardTitle>Monthly Filings</CardTitle>
-          <CardDescription>
-            Tax returns processed per month
-          </CardDescription>
+          <CardDescription>Tax returns processed per month</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
@@ -46,9 +56,9 @@ export function FilingStats() {
                 <YAxis stroke="var(--muted-foreground)" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--background)',
-                    borderColor: 'var(--border)',
-                    color: 'var(--foreground)'
+                    backgroundColor: "var(--background)",
+                    borderColor: "var(--border)",
+                    color: "var(--foreground)",
                   }}
                 />
                 <Bar dataKey="filings" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
@@ -62,9 +72,7 @@ export function FilingStats() {
       <Card>
         <CardHeader>
           <CardTitle>Filing Status</CardTitle>
-          <CardDescription>
-            Status distribution of tax filings
-          </CardDescription>
+          <CardDescription>Status distribution of tax filings</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
@@ -87,9 +95,9 @@ export function FilingStats() {
                 <Legend layout="horizontal" verticalAlign="bottom" align="center" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--background)',
-                    borderColor: 'var(--border)',
-                    color: 'var(--foreground)'
+                    backgroundColor: "var(--background)",
+                    borderColor: "var(--border)",
+                    color: "var(--foreground)",
                   }}
                 />
               </PieChart>
@@ -98,5 +106,5 @@ export function FilingStats() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

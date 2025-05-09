@@ -1,14 +1,6 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import { 
-  Facebook, 
-  Twitter, 
-  Instagram, 
-  Linkedin, 
-  Mail, 
-  Phone, 
-  MapPin 
-} from 'lucide-react';
+import Link from "next/link"
+import Image from "next/image"
+import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from "lucide-react"
 
 const Footer = () => {
   return (
@@ -26,20 +18,36 @@ const Footer = () => {
               />
             </Link>
             <p className="text-muted-foreground text-sm mt-4">
-              Simplified tax filing, registration, and compliance services in Pakistan.
-              Making tax filing easy, affordable and hassle-free.
+              Simplified tax filing, registration, and compliance services in Pakistan. Making tax filing easy,
+              affordable and hassle-free.
             </p>
             <div className="flex space-x-4 pt-2">
-              <Link href="https://facebook.com" target="_blank" className="text-muted-foreground hover:text-[#af0e0e] transition-colors">
+              <Link
+                href="https://facebook.com"
+                target="_blank"
+                className="text-muted-foreground hover:text-[#af0e0e] transition-colors"
+              >
                 <Facebook size={20} />
               </Link>
-              <Link href="https://twitter.com" target="_blank" className="text-muted-foreground hover:text-[#af0e0e] transition-colors">
+              <Link
+                href="https://twitter.com"
+                target="_blank"
+                className="text-muted-foreground hover:text-[#af0e0e] transition-colors"
+              >
                 <Twitter size={20} />
               </Link>
-              <Link href="https://instagram.com" target="_blank" className="text-muted-foreground hover:text-[#af0e0e] transition-colors">
+              <Link
+                href="https://instagram.com"
+                target="_blank"
+                className="text-muted-foreground hover:text-[#af0e0e] transition-colors"
+              >
                 <Instagram size={20} />
               </Link>
-              <Link href="https://linkedin.com" target="_blank" className="text-muted-foreground hover:text-[#af0e0e] transition-colors">
+              <Link
+                href="https://linkedin.com"
+                target="_blank"
+                className="text-muted-foreground hover:text-[#af0e0e] transition-colors"
+              >
                 <Linkedin size={20} />
               </Link>
             </div>
@@ -49,32 +57,50 @@ const Footer = () => {
             <h3 className="font-semibold text-lg mb-4">Services</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/services/tax-filing" className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors">
+                <Link
+                  href="/services/tax-filing"
+                  className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors"
+                >
                   Tax Filing
                 </Link>
               </li>
               <li>
-                <Link href="/services/tax-registration" className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors">
+                <Link
+                  href="/services/tax-registration"
+                  className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors"
+                >
                   Tax Registration
                 </Link>
               </li>
               <li>
-                <Link href="/services/wealth-statement" className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors">
+                <Link
+                  href="/services/income-tax-returns/wealth-statement"
+                  className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors"
+                >
                   Wealth Statement
                 </Link>
               </li>
               <li>
-                <Link href="/services/corporate" className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors">
+                <Link
+                  href="/services/corporate"
+                  className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors"
+                >
                   Corporate Services
                 </Link>
               </li>
               <li>
-                <Link href="/services/compliance" className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors">
+                <Link
+                  href="/services/compliance"
+                  className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors"
+                >
                   Compliance Advisory
                 </Link>
               </li>
               <li>
-                <Link href="/services/certificate" className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors">
+                <Link
+                  href="/services/certificate-issuance"
+                  className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors"
+                >
                   Certificate Issuance
                 </Link>
               </li>
@@ -94,7 +120,7 @@ const Footer = () => {
                   Contact Us
                 </Link>
               </li>
-              <li>
+              {/*<li>
                 <Link href="/faq" className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors">
                   FAQ
                 </Link>
@@ -105,15 +131,21 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/privacy-policy" className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors">
+                <Link
+                  href="/privacy-policy"
+                  className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors"
+                >
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms-of-service" className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors">
+                <Link
+                  href="/terms-of-service"
+                  className="text-muted-foreground hover:text-[#af0e0e] text-sm transition-colors"
+                >
                   Terms of Service
                 </Link>
-              </li>
+              </li>*/}
             </ul>
           </div>
 
@@ -128,15 +160,11 @@ const Footer = () => {
               </li>
               <li className="flex items-center">
                 <Phone size={18} className="mr-2 text-[#af0e0e]" />
-                <span className="text-sm text-muted-foreground">
-                  +92 300 1234567
-                </span>
+                <span className="text-sm text-muted-foreground">+92 300 1234567</span>
               </li>
               <li className="flex items-center">
                 <Mail size={18} className="mr-2 text-[#af0e0e]" />
-                <span className="text-sm text-muted-foreground">
-                  info@befiler.com
-                </span>
+                <span className="text-sm text-muted-foreground">info@befiler.com</span>
               </li>
             </ul>
           </div>
@@ -145,24 +173,23 @@ const Footer = () => {
       <div className="border-t border-border py-6">
         <div className="container px-4 mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Befiler. All rights reserved.
-            </p>
+            <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Befiler. All rights reserved.</p>
             <div className="mt-4 md:mt-0">
               <ul className="flex space-x-6">
                 <li>
-                  <Link href="/privacy-policy" className="text-xs text-muted-foreground hover:text-[#af0e0e] transition-colors">
+                  <Link
+                    href="/privacy-policy"
+                    className="text-xs text-muted-foreground hover:text-[#af0e0e] transition-colors"
+                  >
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/terms-of-service" className="text-xs text-muted-foreground hover:text-[#af0e0e] transition-colors">
+                  <Link
+                    href="/terms-of-service"
+                    className="text-xs text-muted-foreground hover:text-[#af0e0e] transition-colors"
+                  >
                     Terms of Service
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/sitemap" className="text-xs text-muted-foreground hover:text-[#af0e0e] transition-colors">
-                    Sitemap
                   </Link>
                 </li>
               </ul>
@@ -171,7 +198,7 @@ const Footer = () => {
         </div>
       </div>
     </footer>
-  );
-};
+  )
+}
 
-export default Footer;
+export default Footer

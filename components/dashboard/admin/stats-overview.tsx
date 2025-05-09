@@ -1,40 +1,36 @@
-"use client";
+"use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileCheck, Clock, DollarSign } from "lucide-react";
-import { mockAdminUsers, mockRecentFilers, mockMonthlyFilings, mockRevenueData } from "@/lib/constants";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { formatCurrency } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Users, FileCheck, Clock, DollarSign } from "lucide-react"
+import { mockAdminUsers, mockRecentFilers, mockMonthlyFilings, mockRevenueData } from "@/lib/constants"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { formatCurrency } from "@/lib/utils"
 
 export function StatsOverview() {
   // Calculate some stats
-  const totalUsers = mockAdminUsers.length;
-  const activeUsers = mockAdminUsers.filter(user => user.status === 'Active').length;
-  const totalFilings = mockAdminUsers.reduce((sum, user) => sum + user.filings, 0);
-  const pendingFilings = mockRecentFilers.filter(filing => filing.status === 'Under Review').length;
-  
+  const totalUsers = mockAdminUsers.length
+  const activeUsers = mockAdminUsers.filter((user) => user.status === "Active").length
+  const totalFilings = mockAdminUsers.reduce((sum, user) => sum + user.filings, 0)
+  const pendingFilings = mockRecentFilers.filter((filing) => filing.status === "Under Review").length
+
   // Revenue calculations
-  const thisMonthRevenue = mockRevenueData[new Date().getMonth()].revenue;
-  const lastMonthRevenue = mockRevenueData[new Date().getMonth() - 1 < 0 ? 11 : new Date().getMonth() - 1].revenue;
-  const revenueChange = ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
-  
+  const thisMonthRevenue = mockRevenueData[new Date().getMonth()].revenue
+  const lastMonthRevenue = mockRevenueData[new Date().getMonth() - 1 < 0 ? 11 : new Date().getMonth() - 1].revenue
+  const revenueChange = ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* User Stats Card */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Users
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold">{totalUsers}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {activeUsers} active users
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">{activeUsers} active users</p>
               </div>
               <div className="w-10 h-10 bg-[#af0e0e]/10 rounded-full flex items-center justify-center">
                 <Users className="h-5 w-5 text-[#af0e0e]" />
@@ -46,17 +42,13 @@ export function StatsOverview() {
         {/* Filings Stats Card */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Filings
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Filings</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold">{totalFilings}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {pendingFilings} pending approval
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">{pendingFilings} pending approval</p>
               </div>
               <div className="w-10 h-10 bg-[#af0e0e]/10 rounded-full flex items-center justify-center">
                 <FileCheck className="h-5 w-5 text-[#af0e0e]" />
@@ -68,17 +60,22 @@ export function StatsOverview() {
         {/* Current Month Filing Card */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              This Month Filings
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">This Month Filings</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold">{mockMonthlyFilings[new Date().getMonth()].filings}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {mockMonthlyFilings[new Date().getMonth()].filings > mockMonthlyFilings[new Date().getMonth() - 1 < 0 ? 11 : new Date().getMonth() - 1].filings ? '↑' : '↓'} 
-                  {Math.abs(mockMonthlyFilings[new Date().getMonth()].filings - mockMonthlyFilings[new Date().getMonth() - 1 < 0 ? 11 : new Date().getMonth() - 1].filings)} from last month
+                  {mockMonthlyFilings[new Date().getMonth()].filings >
+                  mockMonthlyFilings[new Date().getMonth() - 1 < 0 ? 11 : new Date().getMonth() - 1].filings
+                    ? "↑"
+                    : "↓"}
+                  {Math.abs(
+                    mockMonthlyFilings[new Date().getMonth()].filings -
+                      mockMonthlyFilings[new Date().getMonth() - 1 < 0 ? 11 : new Date().getMonth() - 1].filings,
+                  )}{" "}
+                  from last month
                 </p>
               </div>
               <div className="w-10 h-10 bg-[#af0e0e]/10 rounded-full flex items-center justify-center">
@@ -91,16 +88,14 @@ export function StatsOverview() {
         {/* Revenue Card */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Monthly Revenue
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Revenue</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold">{formatCurrency(thisMonthRevenue)}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {revenueChange >= 0 ? '↑' : '↓'} 
+                  {revenueChange >= 0 ? "↑" : "↓"}
                   {Math.abs(revenueChange).toFixed(1)}% from last month
                 </p>
               </div>
@@ -117,9 +112,7 @@ export function StatsOverview() {
         <Card>
           <CardHeader>
             <CardTitle>Monthly Filings</CardTitle>
-            <CardDescription>
-              Number of tax returns filed each month
-            </CardDescription>
+            <CardDescription>Number of tax returns filed each month</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -138,9 +131,9 @@ export function StatsOverview() {
                   <YAxis stroke="var(--muted-foreground)" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'var(--background)',
-                      borderColor: 'var(--border)',
-                      color: 'var(--foreground)'
+                      backgroundColor: "var(--background)",
+                      borderColor: "var(--border)",
+                      color: "var(--foreground)",
                     }}
                   />
                   <Line
@@ -160,9 +153,7 @@ export function StatsOverview() {
         <Card>
           <CardHeader>
             <CardTitle>Monthly Revenue</CardTitle>
-            <CardDescription>
-              Revenue generated from tax filing services
-            </CardDescription>
+            <CardDescription>Revenue generated from tax filing services</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -181,9 +172,9 @@ export function StatsOverview() {
                   <YAxis stroke="var(--muted-foreground)" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'var(--background)',
-                      borderColor: 'var(--border)',
-                      color: 'var(--foreground)'
+                      backgroundColor: "var(--background)",
+                      borderColor: "var(--border)",
+                      color: "var(--foreground)",
                     }}
                     formatter={(value) => [formatCurrency(value as number), "Revenue"]}
                   />
@@ -201,5 +192,5 @@ export function StatsOverview() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

@@ -1,23 +1,17 @@
-"use client";
+"use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, FileCheck, Shield, Clock, CheckCircle } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ArrowRight, FileCheck, Shield, Clock, CheckCircle } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
 
 export default function TaxRegistrationPage() {
   const registrationTypes = [
     {
       title: "NTN Registration",
       description: "National Tax Number registration for individuals",
-      requirements: [
-        "Valid CNIC",
-        "Proof of address",
-        "Bank account details",
-        "Source of income proof",
-      ],
+      requirements: ["Valid CNIC", "Proof of address", "Bank account details", "Source of income proof"],
     },
     {
       title: "Business Registration",
@@ -32,14 +26,9 @@ export default function TaxRegistrationPage() {
     {
       title: "Sales Tax Registration",
       description: "Registration for sales tax and GST",
-      requirements: [
-        "Business NTN",
-        "Bank account statements",
-        "Utility bills",
-        "Business ownership proof",
-      ],
+      requirements: ["Business NTN", "Bank account statements", "Utility bills", "Business ownership proof"],
     },
-  ];
+  ]
 
   const benefits = [
     {
@@ -57,19 +46,17 @@ export default function TaxRegistrationPage() {
       title: "Time Saving",
       description: "Save time with our streamlined registration process",
     },
-  ];
+  ]
 
   return (
     <main className="container mx-auto px-4 py-16 mt-16">
       {/* Hero Section */}
       <div className="flex flex-col lg:flex-row items-center gap-12 mb-16">
         <div className="lg:w-1/2">
-          <h1 className="text-4xl font-bold tracking-tight mb-6">
-            Tax Registration Made Simple
-          </h1>
+          <h1 className="text-4xl font-bold tracking-tight mb-6">Tax Registration Made Simple</h1>
           <p className="text-lg text-muted-foreground mb-8">
-            Get registered with FBR quickly and easily. Our expert team handles
-            the entire process, ensuring compliance and timely completion.
+            Get registered with FBR quickly and easily. Our expert team handles the entire process, ensuring compliance
+            and timely completion.
           </p>
           <div className="flex gap-4">
             <Link href="/auth/signup">
@@ -155,5 +142,5 @@ export default function TaxRegistrationPage() {
         </div>
       </div>
     </main>
-  );
+  )
 }

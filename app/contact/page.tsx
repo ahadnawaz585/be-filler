@@ -1,20 +1,22 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
+import type React from "react"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useToast } from "@/hooks/use-toast"
+import { Mail, Phone, MapPin, Clock, Send } from "lucide-react"
 
 export default function ContactPage() {
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+    e.preventDefault()
+    setIsSubmitting(true)
 
     // Simulate form submission
     setTimeout(() => {
@@ -22,11 +24,11 @@ export default function ContactPage() {
         title: "Message Sent",
         description: "We'll get back to you as soon as possible.",
         variant: "default",
-      });
-      setIsSubmitting(false);
-      (e.target as HTMLFormElement).reset();
-    }, 1000);
-  };
+      })
+      setIsSubmitting(false)
+      ;(e.target as HTMLFormElement).reset()
+    }, 1000)
+  }
 
   const contactInfo = [
     {
@@ -49,15 +51,15 @@ export default function ContactPage() {
       title: "Working Hours",
       details: ["Monday - Friday: 9 AM - 6 PM", "Saturday: 10 AM - 2 PM"],
     },
-  ];
+  ]
 
   return (
     <main className="container mx-auto px-4 py-16 mt-16">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold tracking-tight mb-4">Contact Us</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Have questions? We're here to help. Reach out to us through any of the channels below
-          or fill out the contact form.
+          Have questions? We're here to help. Reach out to us through any of the channels below or fill out the contact
+          form.
         </p>
       </div>
 
@@ -87,9 +89,7 @@ export default function ContactPage() {
         <Card>
           <CardHeader>
             <CardTitle>Send us a Message</CardTitle>
-            <CardDescription>
-              Fill out the form below and we'll get back to you as soon as possible.
-            </CardDescription>
+            <CardDescription>Fill out the form below and we'll get back to you as soon as possible.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -105,17 +105,9 @@ export default function ContactPage() {
                 <Input placeholder="Subject" required />
               </div>
               <div className="space-y-2">
-                <Textarea
-                  placeholder="Your Message"
-                  className="min-h-[150px]"
-                  required
-                />
+                <Textarea placeholder="Your Message" className="min-h-[150px]" required />
               </div>
-              <Button 
-                type="submit" 
-                className="w-full bg-[#af0e0e] hover:bg-[#8a0b0b]"
-                disabled={isSubmitting}
-              >
+              <Button type="submit" className="w-full bg-[#af0e0e] hover:bg-[#8a0b0b]" disabled={isSubmitting}>
                 {isSubmitting ? (
                   "Sending..."
                 ) : (
@@ -142,5 +134,5 @@ export default function ContactPage() {
         </Card>
       </div>
     </main>
-  );
+  )
 }

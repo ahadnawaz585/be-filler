@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import { useRef } from 'react';
-import Link from 'next/link';
-import { motion, useInView } from 'framer-motion';
-import { ArrowRight, File, ClipboardCheck, BarChart4, Building2, Lightbulb, Award } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { taxServices } from '@/lib/constants';
+import { useRef } from "react"
+import Link from "next/link"
+import { motion, useInView } from "framer-motion"
+import { ArrowRight, File, ClipboardCheck, BarChart4, Building2, Lightbulb, Award } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { taxServices } from "@/lib/constants"
 
 const iconComponents = {
   File,
@@ -15,11 +15,11 @@ const iconComponents = {
   Building2,
   Lightbulb,
   Award,
-};
+}
 
 const ServiceCard = ({ service, index }: { service: any; index: number }) => {
-  const IconComponent = iconComponents[service.icon as keyof typeof iconComponents];
-  
+  const IconComponent = iconComponents[service.icon as keyof typeof iconComponents]
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -43,30 +43,30 @@ const ServiceCard = ({ service, index }: { service: any; index: number }) => {
         </CardFooter>
       </Card>
     </motion.div>
-  );
-};
+  )
+}
 
 const ServicesSection = () => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' });
-  
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
+
   return (
     <section className="py-16 md:py-24 bg-card" ref={ref}>
       <div className="container px-4 mx-auto">
         <div className="max-w-3xl mx-auto text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Services</h2>
           <p className="text-muted-foreground">
-            Comprehensive tax solutions for individuals, freelancers, and businesses of all sizes.
-            From simple tax returns to complex compliance matters, we've got you covered.
+            Comprehensive tax solutions for individuals, freelancers, and businesses of all sizes. From simple tax
+            returns to complex compliance matters, we've got you covered.
           </p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {taxServices.map((service, index) => (
             <ServiceCard key={service.id} service={service} index={index} />
           ))}
         </div>
-        
+
         <div className="mt-16 text-center">
           <Link href="/services">
             <Button size="lg" className="bg-[#af0e0e] hover:bg-[#8a0b0b]">
@@ -76,7 +76,7 @@ const ServicesSection = () => {
         </div>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default ServicesSection;
+export default ServicesSection
