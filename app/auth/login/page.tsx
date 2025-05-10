@@ -161,7 +161,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6">
+          {/* <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border"></div>
@@ -182,7 +182,7 @@ export default function LoginPage() {
                 Demo Login as Accountant
               </Button>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <p className="text-center text-sm">

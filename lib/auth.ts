@@ -52,7 +52,7 @@ export const loginUser = (email: string, password: string) => {
     {
       id: "1",
       email: "user@example.com",
-      password: "password123",
+      password: "user123",
       name: "Regular User",
       role: "user",
       mobile: "+92 3001234567",
@@ -61,7 +61,7 @@ export const loginUser = (email: string, password: string) => {
     {
       id: "2",
       email: "admin@example.com",
-      password: "password123",
+      password: "admin123",
       name: "Admin User",
       role: "admin",
       mobile: "+92 3009876543",
@@ -70,7 +70,7 @@ export const loginUser = (email: string, password: string) => {
     {
       id: "3",
       email: "accountant@example.com",
-      password: "password123",
+      password: "accountant123",
       name: "Accountant User",
       role: "accountant",
       mobile: "+92 3005555555",
