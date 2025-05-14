@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   console.log(`Middleware triggered for: ${request.url}`)
 
   // Get the token from cookies
-  const token = request.cookies.get("userToken")?.value // Replace 'userToken' with your actual cookie name
+  const token = request.cookies.get("auth_token")?.value // Replace 'userToken' with your actual cookie name
 
   // Define protected routes (e.g., user pages)
   const protectedPaths = ["/user", "/dashboard", "/profile"] // Adjust these to your actual protected routes

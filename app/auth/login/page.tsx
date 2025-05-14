@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
-import { loginUser } from "@/lib/auth"
 import { Lock, Mail } from "lucide-react"
+import AuthService from "@/auth/auth.service"
+
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -40,20 +41,20 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      const result = loginUser(data.email, data.password)
-
-      if (result.success) {
+      const authService = new AuthService()
+      const result = await authService.login(data);
+      if (result.token) {
         toast({
           title: "Login Successful",
           description: "Welcome back! Redirecting to dashboard...",
           variant: "default",
         })
-
+        console.log(result);
         // Redirect to dashboard after a short delay
         setTimeout(() => {
           const user: any = result.user
           if (user.role === "admin") {
-            router.push("/dashboard/admin")
+            window.location.href = "/dashboard/admin"
           } else if (user.role === "accountant") {
             router.push("/dashboard/accountant")
           } else {

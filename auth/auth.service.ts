@@ -7,7 +7,7 @@ class AuthService {
   private baseUrl = environment.apiUrl + "/auth";
 
   async login(credentials: any): Promise<any> {
-    let data= {...credentials}
+    let data = { ...credentials }
     try {
       const response = await axios.post<any>(
         `${this.baseUrl}/login`,
@@ -19,7 +19,7 @@ class AuthService {
         return null;
       }
 
-      return response;
+      return response.data;
     } catch (error) {
       console.error("Login error:", error);
       throw error;
@@ -61,7 +61,7 @@ class AuthService {
   async logoutUserOfAllDevices(id: string): Promise<any> {
     const token = this.getToken();
     try {
-      await axios.post(`${this.baseUrl}/logoutUserOfAllDevices`,{id}, {
+      await axios.post(`${this.baseUrl}/logoutUserOfAllDevices`, { id }, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

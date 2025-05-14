@@ -1,6 +1,7 @@
 "use client"
 
 import { v4 as uuidv4 } from "uuid"
+import Cookies from "js-cookie"
 
 // Mock function to generate OTP
 export const generateOTP = () => {
@@ -102,10 +103,10 @@ export const loginUser = (email: string, password: string) => {
 export const isAuthenticated = () => {
   if (typeof window === "undefined") return false
 
-  const token = localStorage.getItem("token")
-  const user = localStorage.getItem("user")
+  const token = Cookies.get("auth_token")
+  // const user = localStorage.getItem("user")
 
-  return !!token && !!user
+  return !!token
 }
 
 // Mock function to get current user

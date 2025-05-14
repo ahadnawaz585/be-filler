@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,8 @@ import { mockAdminUsers } from "@/lib/constants"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Search, UserPlus, Filter, ArrowUpDown } from "lucide-react"
+import { UserService } from "@/services/user.service"
+import { User } from "@/types/users"
 
 export function UsersTable() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -16,6 +18,20 @@ export function UsersTable() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [sortField, setSortField] = useState("registrationDate")
   const [sortDirection, setSortDirection] = useState("desc")
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const us = new UserService();
+      const data = await us.getAllUsers();
+      console.log(data);
+      setUsers(data);
+      setLoading(false);
+    }
+    fetchUsers();
+  }, [])
 
   // Filter users based on search term and filters
   const filteredUsers = mockAdminUsers.filter((user) => {
@@ -147,17 +163,17 @@ export function UsersTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedUsers.map((user) => (
+              {users && users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.id}</TableCell>
-                  <TableCell>{user.name}</TableCell>
+                  <TableCell>{user.fullName}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
                       {user.role}
                     </Badge>
                   </TableCell>
-                  <TableCell>{new Date(user.registrationDate).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge
                       variant={user.status === "Active" ? "default" : "secondary"}
@@ -166,7 +182,7 @@ export function UsersTable() {
                       {user.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">{user.filings}</TableCell>
+                  <TableCell className="text-right">{ }</TableCell>
                 </TableRow>
               ))}
             </TableBody>
