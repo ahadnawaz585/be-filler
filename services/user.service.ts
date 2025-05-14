@@ -14,6 +14,9 @@ export class OrderService extends BaseService {
     super(axiosInstance, "/api/v1/orders");
   }
 
+ async getUserName (id:string) :Promise<string>{
+    return await this.get<string>(`/${id}`)
+  }
   // Get an order by ID
   async getOrderById(id: number): Promise<Order> {
     return this.get<Order>(`/${id}`);
