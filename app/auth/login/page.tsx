@@ -1,4 +1,5 @@
 "use client"
+import { useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -10,8 +11,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
-import { loginUser } from "@/lib/auth"
 import { Lock, Mail } from "lucide-react"
+import AuthService from "@/auth/auth.service"
+import { LocalStorage } from "@/services/localStorage/localStorage"
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -24,10 +26,12 @@ type LoginFormValues = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const { toast } = useToast()
   const router = useRouter()
+  const authService = new AuthService()
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -38,11 +42,37 @@ export default function LoginPage() {
     },
   })
 
+  // Check if user is already logged in
+  useEffect(() => {
+    // If user is already logged in, redirect to appropriate dashboard
+    // if (authService.isLoggedIn()) {
+    //   const userData: any = authService.getUserData()
+    // redirectToDashboard(userData?.role)
+    //   return
+    // }
+
+    // Check for saved email if "remember me" was enabled
+    if (authService.isRememberMeEnabled()) {
+      const savedEmail = LocalStorage.getItem<string>("saved_email", false)
+      if (savedEmail) {
+        setValue("email", savedEmail)
+        setValue("rememberMe", true)
+      }
+    }
+  }, [])
+
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      const result = loginUser(data.email, data.password)
+      // Save email for "remember me" functionality
+      if (data.rememberMe) {
+        LocalStorage.setItem("saved_email", data.email)
+      } else {
+        LocalStorage.removeItem("saved_email")
+      }
 
-      if (result.success) {
+      const result = await authService.login(data)
+
+      if (result.success && result.token) {
         toast({
           title: "Login Successful",
           description: "Welcome back! Redirecting to dashboard...",
@@ -51,14 +81,7 @@ export default function LoginPage() {
 
         // Redirect to dashboard after a short delay
         setTimeout(() => {
-          const user: any = result.user
-          if (user.role === "admin") {
-            router.push("/dashboard/admin")
-          } else if (user.role === "accountant") {
-            router.push("/dashboard/accountant")
-          } else {
-            router.push("/dashboard")
-          }
+          redirectToDashboard(result.user?.role)
         }, 1500)
       } else {
         toast({
@@ -73,6 +96,17 @@ export default function LoginPage() {
         description: "An error occurred during login. Please try again.",
         variant: "destructive",
       })
+    }
+  }
+
+  // Function to handle redirects based on user role
+  const redirectToDashboard = (role?: string) => {
+    if (role === "admin") {
+      window.location.href = "/dashboard/admin"
+    } else if (role === "accountant") {
+      router.push("/dashboard/accountant")
+    } else {
+      router.push("/dashboard")
     }
   }
 
@@ -161,7 +195,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* <div className="mt-6">
+          <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border"></div>
@@ -182,7 +216,7 @@ export default function LoginPage() {
                 Demo Login as Accountant
               </Button>
             </div>
-          </div> */}
+          </div>
         </div>
 
         <p className="text-center text-sm">

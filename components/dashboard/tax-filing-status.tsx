@@ -1,34 +1,76 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from "react"
+import {
+  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { FileCheck, ArrowRight, CalendarClock, Check, AlertCircle } from "lucide-react"
+import {
+  FileCheck, ArrowRight, CalendarClock, Check, AlertCircle
+} from "lucide-react"
 import { taxYears } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select"
+
+const LOCAL_STORAGE_KEYS = {
+  SELECTED_YEAR: "tax:selectedYear",
+  FILING_PROGRESS: "tax:filingProgress",
+  FILING_STEPS: "tax:filingSteps"
+}
 
 export function TaxFilingStatus() {
-  const [selectedYear, setSelectedYear] = useState(taxYears[0].value)
+  const [selectedYear, setSelectedYear] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(LOCAL_STORAGE_KEYS.SELECTED_YEAR) || taxYears[0].value
+    }
+    return taxYears[0].value
+  })
+
+  const [filingProgress, setFilingProgress] = useState(() => {
+    if (typeof window !== "undefined") {
+      const progress = localStorage.getItem(LOCAL_STORAGE_KEYS.FILING_PROGRESS)
+      return progress ? JSON.parse(progress) : 75
+    }
+    return 75
+  })
+
+  const [filingSteps, setFilingSteps] = useState(() => {
+    if (typeof window !== "undefined") {
+      const steps = localStorage.getItem(LOCAL_STORAGE_KEYS.FILING_STEPS)
+      return steps
+        ? JSON.parse(steps)
+        : [
+          { id: 1, name: "Registration", completed: true },
+          { id: 2, name: "Personal Information", completed: true },
+          { id: 3, name: "Income Details", completed: true },
+          { id: 4, name: "Deductions & Credits", completed: false },
+          { id: 5, name: "Assets & Liabilities", completed: false },
+          { id: 6, name: "Review & Submit", completed: false },
+        ]
+    }
+    return []
+  })
+
+  // Sync changes to local storage
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.SELECTED_YEAR, selectedYear)
+  }, [selectedYear])
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.FILING_PROGRESS, JSON.stringify(filingProgress))
+  }, [filingProgress])
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.FILING_STEPS, JSON.stringify(filingSteps))
+  }, [filingSteps])
 
   // Time remaining calculation
   const currentDate = new Date()
-  const deadlineDate = new Date(Number.parseInt(selectedYear.split("-")[1]), 8, 30) // September 30th
+  const deadlineDate = new Date(Number.parseInt(selectedYear.split("-")[1]), 8, 30) // Sept 30
   const timeRemaining = deadlineDate.getTime() - currentDate.getTime()
   const daysRemaining = Math.max(0, Math.ceil(timeRemaining / (1000 * 60 * 60 * 24)))
-
-  // Mock filing progress data
-  const filingProgress = 75 // percentage
-
-  // Filing steps
-  const filingSteps = [
-    { id: 1, name: "Registration", completed: true },
-    { id: 2, name: "Personal Information", completed: true },
-    { id: 3, name: "Income Details", completed: true },
-    { id: 4, name: "Deductions & Credits", completed: false },
-    { id: 5, name: "Assets & Liabilities", completed: false },
-    { id: 6, name: "Review & Submit", completed: false },
-  ]
 
   return (
     <Card className="w-full">
@@ -54,7 +96,6 @@ export function TaxFilingStatus() {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Status Overview */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted p-4 rounded-lg">
             <div className="flex items-center">
               <FileCheck className="h-10 w-10 text-[#af0e0e] mr-4" />
@@ -72,40 +113,41 @@ export function TaxFilingStatus() {
             </div>
           </div>
 
-          {/* Progress Bar (Replaced with Custom CSS) */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium">Overall Progress</span>
               <span className="text-sm font-medium">{filingProgress}%</span>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-[#af0e0e] transition-all" style={{ width: `${filingProgress}%` }} />
+              <div
+                className="h-full bg-[#af0e0e] transition-all"
+                style={{ width: `${filingProgress}%` }}
+              />
             </div>
           </div>
 
-          {/* Filing Steps */}
           <div className="space-y-4">
             <h3 className="font-medium">Filing Steps</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {filingSteps.map((step) => (
+              {filingSteps.map((step: any) => (
                 <div
                   key={step.id}
-                  className={`flex items-center p-3 rounded-lg border ${
-                    step.completed ? "bg-[#af0e0e]/5 border-[#af0e0e]/20" : "bg-muted border-border"
-                  }`}
+                  className={`flex items-center p-3 rounded-lg border ${step.completed ? "bg-[#af0e0e]/5 border-[#af0e0e]/20" : "bg-muted border-border"
+                    }`}
                 >
                   {step.completed ? (
                     <Check className="h-5 w-5 text-[#af0e0e] mr-3" />
                   ) : (
                     <div className="h-5 w-5 rounded-full border-2 border-muted-foreground mr-3 flex-shrink-0"></div>
                   )}
-                  <span className={step.completed ? "font-medium" : "text-muted-foreground"}>{step.name}</span>
+                  <span className={step.completed ? "font-medium" : "text-muted-foreground"}>
+                    {step.name}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Alert */}
           {daysRemaining < 30 && (
             <div className="flex items-start p-4 rounded-lg bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
               <AlertCircle className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0" />

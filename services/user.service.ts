@@ -1,39 +1,36 @@
 import { axiosInstance } from "@/lib/ApiClient"; // Adjust path to ApiClient.ts
 import { BaseService } from "./base.service";// Adjust path to BaseService.ts
+import { environment } from "@/environment/environment";
+import { User } from "@/types/users"; // Adjust path to your User type
 
-interface Order {
-  id: number;
-  userId: number;
-  total: number;
-  status: string;
-}
 
-export class OrderService extends BaseService {
+export class UserService extends BaseService {
   constructor() {
     // Pass the axiosInstance and a baseURL for orders
-    super(axiosInstance, "/api/v1/orders");
+    super(axiosInstance, environment.apiUrl + "/secure/users");
   }
 
- async getUserName (id:string) :Promise<string>{
-    return await this.get<string>(`/${id}`)
+  // Get an user by ID
+  async getUserById(id: number): Promise<User> {
+    return this.get<User>(`/${id}`);
   }
-  // Get an order by ID
-  async getOrderById(id: number): Promise<Order> {
-    return this.get<Order>(`/${id}`);
+
+  async getAllUsers(): Promise<User[]> {
+    return this.get<User[]>("/");
   }
 
   // Create a new order
-  async createOrder(orderData: Partial<Order>): Promise<Order> {
-    return this.post<Order>("/", orderData);
+  async registerUser(userData: Partial<User>): Promise<User> {
+    return this.post<User>("/", userData);
   }
 
   // Update an order
-  async updateOrder(id: number, orderData: Partial<Order>): Promise<Order> {
-    return this.patch<Order>(`/${id}`, orderData);
+  async updateOrder(id: number, userData: Partial<User>): Promise<User> {
+    return this.put<User>(`/${id}`, userData);
   }
 
-  // Cancel (delete) an order
-  async cancelOrder(id: number): Promise<void> {
+  // // Cancel (delete) an order
+  async deleteUser(id: number): Promise<void> {
     return this.delete<void>(`/${id}`);
   }
 }
