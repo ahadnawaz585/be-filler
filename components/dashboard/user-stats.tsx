@@ -1,20 +1,57 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { FileText, BarChart3, Bell, ArrowRight, Clock } from "lucide-react"
-import { mockTaxReturns, mockWealthStatements, mockNotifications } from "@/lib/constants"
+import {
+  FileText,
+  BarChart3,
+  Bell,
+  ArrowRight,
+  Clock,
+} from "lucide-react"
+import { useEffect, useState } from "react"
+import {
+  mockTaxReturns,
+  mockWealthStatements,
+  mockNotifications,
+} from "@/lib/constants"
 import { formatCurrency, formatDate } from "@/lib/utils"
 
 export function UserStats() {
-  const unreadNotifications = mockNotifications.filter((n) => !n.read).length
-  const lastTaxReturn = mockTaxReturns[0]
-  const lastWealthStatement = mockWealthStatements[0]
+  const [taxReturns, setTaxReturns] = useState(mockTaxReturns)
+  const [wealthStatements, setWealthStatements] = useState(mockWealthStatements)
+  const [notifications, setNotifications] = useState(mockNotifications)
+
+  useEffect(() => {
+    const storedTaxReturns = localStorage.getItem("taxReturns")
+    const storedWealthStatements = localStorage.getItem("wealthStatements")
+    const storedNotifications = localStorage.getItem("notifications")
+
+    if (storedTaxReturns) setTaxReturns(JSON.parse(storedTaxReturns))
+    else localStorage.setItem("taxReturns", JSON.stringify(mockTaxReturns))
+
+    if (storedWealthStatements) setWealthStatements(JSON.parse(storedWealthStatements))
+    else localStorage.setItem("wealthStatements", JSON.stringify(mockWealthStatements))
+
+    if (storedNotifications) setNotifications(JSON.parse(storedNotifications))
+    else localStorage.setItem("notifications", JSON.stringify(mockNotifications))
+  }, [])
+
+  const unreadNotifications = notifications.filter((n) => !n.read).length
+  const lastTaxReturn = taxReturns[0]
+  const lastWealthStatement = wealthStatements[0]
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Tax Returns Card */}
+      {/* --- Tax Returns Card --- */}
       <Card>
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
@@ -41,11 +78,10 @@ export function UserStats() {
               <span className="text-sm text-muted-foreground">Status</span>
               <span className="text-sm font-medium">
                 <span
-                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                    lastTaxReturn.status === "Completed"
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${lastTaxReturn.status === "Completed"
                       ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                       : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                  }`}
+                    }`}
                 >
                   {lastTaxReturn.status}
                 </span>
@@ -58,7 +94,9 @@ export function UserStats() {
             {lastTaxReturn.refundAmount > 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Refund</span>
-                <span className="text-sm font-medium text-green-600">{formatCurrency(lastTaxReturn.refundAmount)}</span>
+                <span className="text-sm font-medium text-green-600">
+                  {formatCurrency(lastTaxReturn.refundAmount)}
+                </span>
               </div>
             )}
           </div>
@@ -72,7 +110,7 @@ export function UserStats() {
         </CardFooter>
       </Card>
 
-      {/* Wealth Statement Card */}
+      {/* --- Wealth Statement Card --- */}
       <Card>
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
@@ -99,11 +137,10 @@ export function UserStats() {
               <span className="text-sm text-muted-foreground">Status</span>
               <span className="text-sm font-medium">
                 <span
-                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                    lastWealthStatement.status === "Completed"
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${lastWealthStatement.status === "Completed"
                       ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                       : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                  }`}
+                    }`}
                 >
                   {lastWealthStatement.status}
                 </span>
@@ -128,7 +165,7 @@ export function UserStats() {
         </CardFooter>
       </Card>
 
-      {/* Notifications Card */}
+      {/* --- Notifications Card --- */}
       <Card>
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
@@ -143,14 +180,22 @@ export function UserStats() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockNotifications.slice(0, 3).map((notification, index) => (
-              <div key={notification.id} className={`flex items-start gap-4 ${index !== 0 ? "pt-3 border-t" : ""}`}>
+            {notifications.slice(0, 3).map((notification, index) => (
+              <div
+                key={notification.id}
+                className={`flex items-start gap-4 ${index !== 0 ? "pt-3 border-t" : ""}`}
+              >
                 <div
-                  className={`w-2 h-2 mt-2 rounded-full ${!notification.read ? "bg-[#af0e0e]" : "bg-gray-300 dark:bg-gray-600"}`}
+                  className={`w-2 h-2 mt-2 rounded-full ${!notification.read
+                      ? "bg-[#af0e0e]"
+                      : "bg-gray-300 dark:bg-gray-600"
+                    }`}
                 ></div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">{notification.title}</p>
-                  <p className="text-xs text-muted-foreground">{notification.message}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {notification.message}
+                  </p>
                   <div className="flex items-center text-xs text-muted-foreground">
                     <Clock className="mr-1 h-3 w-3" /> {formatDate(notification.date)}
                   </div>

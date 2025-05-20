@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { isAuthenticated, getCurrentUser } from "@/lib/auth"
+import { isAuthenticated, getCurrentUser } from "@/services/localStorage/auth"
 import { UserStats } from "@/components/dashboard/user-stats"
 import { TaxFilingStatus } from "@/components/dashboard/tax-filing-status"
 import { RecentActivity } from "@/components/dashboard/recent-activity"

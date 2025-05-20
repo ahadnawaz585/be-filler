@@ -1,48 +1,49 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { mockAccountantClients } from "@/lib/constants"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { formatDate } from "@/lib/utils"
 import { Search, UserPlus, FileText, ArrowUpDown } from "lucide-react"
+import { formatDate } from "@/lib/utils"
+import { AddClientModal } from "./add-client-modal";
+import { LocalStorage } from "@/services/localStorage/localStorage"
 
 export function ClientList() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortField, setSortField] = useState("name")
   const [sortDirection, setSortDirection] = useState("asc")
+  const [clients, setClients] = useState<any>([])
+  const [showAddModal, setShowAddModal] = useState(false)
 
-  // Filter clients based on search term
-  const filteredClients = mockAccountantClients.filter((client) => {
-    return (
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.id.toLowerCase().includes(searchTerm.toLowerCase())
+  // Load clients from localStorage on mount
+  useEffect(() => {
+    const data = LocalStorage.getItem("clients") || []
+    setClients(Array.isArray(data) ? data : [])
+  }, [showAddModal]) // reload when modal closes after adding client
+
+  const filteredClients = clients.filter((client: any) =>
+    [client.name, client.email, client.id].some((field: string) =>
+      field.toLowerCase().includes(searchTerm.toLowerCase())
     )
-  })
+  )
 
-  // Sort clients
   const sortedClients = [...filteredClients].sort((a, b) => {
-    let aValue = a[sortField as keyof typeof a]
-    let bValue = b[sortField as keyof typeof b]
+    let aValue: any = a[sortField as keyof typeof a]
+    let bValue: any = b[sortField as keyof typeof b]
 
-    // Handle date comparison
     if (sortField === "latestFiling" && aValue !== "-" && bValue !== "-") {
-      aValue = new Date(aValue as string).getTime()
-      bValue = new Date(bValue as string).getTime()
+      aValue = new Date(aValue).getTime()
+      bValue = new Date(bValue).getTime()
     }
 
-    if (sortDirection === "asc") {
-      return aValue > bValue ? 1 : -1
-    } else {
-      return aValue < bValue ? 1 : -1
-    }
+    return sortDirection === "asc"
+      ? aValue > bValue ? 1 : -1
+      : aValue < bValue ? 1 : -1
   })
 
-  // Handle sort
   const handleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc")
@@ -60,12 +61,13 @@ export function ClientList() {
             <CardTitle>Clients</CardTitle>
             <CardDescription>Manage your tax filing clients</CardDescription>
           </div>
-          <Button variant="outline" className="ml-auto">
+          <Button variant="outline" className="ml-auto" onClick={() => setShowAddModal(true)}>
             <UserPlus className="h-4 w-4 mr-2" />
             Add Client
           </Button>
         </div>
       </CardHeader>
+
       <CardContent>
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-grow">
@@ -88,31 +90,26 @@ export function ClientList() {
             <TableHeader>
               <TableRow>
                 <TableHead onClick={() => handleSort("id")} className="cursor-pointer">
-                  ID
-                  {sortField === "id" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
+                  ID {sortField === "id" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
                 <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
-                  Name
-                  {sortField === "name" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
+                  Name {sortField === "name" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead onClick={() => handleSort("filings")} className="cursor-pointer">
-                  Filings
-                  {sortField === "filings" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
+                  Filings {sortField === "filings" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
                 <TableHead onClick={() => handleSort("latestFiling")} className="cursor-pointer">
-                  Latest Filing
-                  {sortField === "latestFiling" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
+                  Latest Filing {sortField === "latestFiling" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
                 <TableHead onClick={() => handleSort("status")} className="cursor-pointer">
-                  Status
-                  {sortField === "status" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
+                  Status {sortField === "status" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedClients.map((client) => (
+              {sortedClients.map((client: any) => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.id}</TableCell>
                   <TableCell>{client.name}</TableCell>
@@ -144,6 +141,8 @@ export function ClientList() {
           </Table>
         </div>
       </CardContent>
+
+      <AddClientModal open={showAddModal} onClose={() => setShowAddModal(false)} />
     </Card>
   )
 }

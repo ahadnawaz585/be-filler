@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { isAuthenticated, getCurrentUser } from "@/lib/auth"
+import { isAuthenticated, getCurrentUser } from "@/services/localStorage/auth"
 import { FilingStats } from "@/components/dashboard/accountant/filing-stats"
 import { ClientList } from "@/components/dashboard/accountant/client-list"
 
@@ -19,7 +19,7 @@ export default function AccountantDashboard() {
     }
 
     // Get current user information
-    const currentUser = getCurrentUser()
+    const currentUser: any = getCurrentUser()
     if (currentUser) {
       if (currentUser.role !== "accountant") {
         router.push("/dashboard")
