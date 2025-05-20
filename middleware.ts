@@ -14,10 +14,10 @@ export function middleware(request: NextRequest) {
   const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path))
 
   // If the path is protected and no token is found, redirect to login (or another page)
-  if (isProtectedPath && !token) {
-    console.log("No token found, redirecting to login")
-    return NextResponse.redirect(new URL("/auth/login", request.url)) // Redirect to login page
-  }
+  // if (isProtectedPath && !token) {
+  //   console.log("No token found, redirecting to login")
+  //   return NextResponse.redirect(new URL("/auth/login", request.url)) // Redirect to login page
+  // }
 
   // If token exists or the path is not protected, proceed with the request
   return NextResponse.next()
