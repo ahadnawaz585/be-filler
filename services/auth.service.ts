@@ -13,11 +13,13 @@ interface LoginResponse {
 
 export class AuthService extends BaseService {
   constructor() {
-    super(axiosInstance, "/api/v1/auth");
+    super(axiosInstance, `/api/v1/auth`);
   }
 
   // Handle user login
   async login(email: string, password: string): Promise<LoginResponse> {
+    console.log(this.client.defaults.baseURL)
+    console.log("Logging in with email:", email);
     return this.post<LoginResponse>("/login", { email, password });
   }
 }

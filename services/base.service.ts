@@ -1,4 +1,5 @@
 import { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import { environment } from "../environment/environment"
 
 export class BaseService {
   protected client: AxiosInstance;
@@ -7,7 +8,7 @@ export class BaseService {
   constructor(client: AxiosInstance, baseURL: string = "") {
     this.loading = false;
     this.client = client;
-    this.client.defaults.baseURL = baseURL;
+    this.client.defaults.baseURL = environment.apiUrl + baseURL;
 
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {

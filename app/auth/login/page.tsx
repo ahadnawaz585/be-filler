@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
-import { loginUser } from "@/lib/auth"
+import { AuthService } from "@/services/auth.service"
 import { Lock, Mail } from "lucide-react"
+import Cookies from "js-cookie"
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -40,20 +41,30 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      const result = loginUser(data.email, data.password)
+      const as = new AuthService();
+      const result = await as.login(data.email, data.password);
 
-      if (result.success) {
+      if (result.token) {
         toast({
           title: "Login Successful",
           description: "Welcome back! Redirecting to dashboard...",
           variant: "default",
+        })
+        // Store token in local storage or cookie
+        Cookies.set("token", result.token, {
+          expires: data.rememberMe ? 30 : undefined, // Set expiration if rememberMe is true
+          sameSite: "Strict",
+        })
+        Cookies.set("user", JSON.stringify(result.user), {
+          expires: data.rememberMe ? 30 : undefined, // Set expiration if rememberMe is true
+          sameSite: "Strict",
         })
 
         // Redirect to dashboard after a short delay
         setTimeout(() => {
           const user: any = result.user
           if (user.role === "admin") {
-            router.push("/dashboard/admin")
+            router.push("/dashboard/admin");
           } else if (user.role === "accountant") {
             router.push("/dashboard/accountant")
           } else {
@@ -63,7 +74,7 @@ export default function LoginPage() {
       } else {
         toast({
           title: "Login Failed",
-          description: result.message || "Invalid email or password",
+          description: result.token || "Invalid email or password",
           variant: "destructive",
         })
       }

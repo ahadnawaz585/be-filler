@@ -5,25 +5,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { mockAdminUsers } from "@/lib/constants"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Search, UserPlus, Filter, ArrowUpDown } from "lucide-react"
+import { IUser } from "@/services/user.service"
 
-export function UsersTable() {
+interface UserTableProps {
+  users: IUser[];
+}
+
+export function UsersTable({ users }: UserTableProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [sortField, setSortField] = useState("registrationDate")
-  const [sortDirection, setSortDirection] = useState("desc")
+  const [sortField, setSortField] = useState("createdAt")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
   // Filter users based on search term and filters
-  const filteredUsers = mockAdminUsers.filter((user) => {
-    // Search term filter
+  const filteredUsers = users.filter((user) => {
+    // Search term filter - using actual IUser properties
     const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.id.toLowerCase().includes(searchTerm.toLowerCase())
+      user.cnic.toLowerCase().includes(searchTerm.toLowerCase())
 
     // Role filter
     const matchesRole = roleFilter === "all" || user.role === roleFilter
@@ -36,13 +40,19 @@ export function UsersTable() {
 
   // Sort users
   const sortedUsers = [...filteredUsers].sort((a, b) => {
-    let aValue = a[sortField as keyof typeof a]
-    let bValue = b[sortField as keyof typeof b]
+    let aValue: any = a[sortField as keyof IUser]
+    let bValue: any = b[sortField as keyof IUser]
 
     // Handle date comparison
-    if (sortField === "registrationDate") {
-      aValue = new Date(aValue as string).getTime()
-      bValue = new Date(bValue as string).getTime()
+    if (sortField === "createdAt") {
+      aValue = new Date(aValue).getTime()
+      bValue = new Date(bValue).getTime()
+    }
+
+    // Handle array length comparison (for documents)
+    if (sortField === "documents") {
+      aValue = (aValue as any[]).length
+      bValue = (bValue as any[]).length
     }
 
     if (sortDirection === "asc") {
@@ -68,7 +78,7 @@ export function UsersTable() {
         <div className="flex flex-col md:flex-row justify-between gap-4">
           <div>
             <CardTitle>All Users</CardTitle>
-            <CardDescription>Manage your registered users</CardDescription>
+            <CardDescription>Manage your registered users ({sortedUsers.length} total)</CardDescription>
           </div>
           <Button variant="outline" className="ml-auto">
             <UserPlus className="h-4 w-4 mr-2" />
@@ -81,7 +91,7 @@ export function UsersTable() {
           <div className="relative flex-grow">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search users..."
+              placeholder="Search by name, email, or CNIC..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8"
@@ -108,8 +118,9 @@ export function UsersTable() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -119,56 +130,74 @@ export function UsersTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead onClick={() => handleSort("id")} className="cursor-pointer">
-                  ID
-                  {sortField === "id" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
+                <TableHead onClick={() => handleSort("cnic")} className="cursor-pointer">
+                  CNIC
+                  {sortField === "cnic" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
-                <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
+                <TableHead onClick={() => handleSort("fullName")} className="cursor-pointer">
                   Name
-                  {sortField === "name" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
+                  {sortField === "fullName" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead onClick={() => handleSort("role")} className="cursor-pointer">
                   Role
                   {sortField === "role" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
-                <TableHead onClick={() => handleSort("registrationDate")} className="cursor-pointer">
+                <TableHead onClick={() => handleSort("createdAt")} className="cursor-pointer">
                   Registration Date
-                  {sortField === "registrationDate" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
+                  {sortField === "createdAt" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
                 <TableHead onClick={() => handleSort("status")} className="cursor-pointer">
                   Status
                   {sortField === "status" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
-                <TableHead onClick={() => handleSort("filings")} className="text-right cursor-pointer">
-                  Filings
-                  {sortField === "filings" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
+                <TableHead onClick={() => handleSort("documents")} className="text-right cursor-pointer">
+                  Docs
+                  {sortField === "documents" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.id}</TableCell>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {user.role}
-                    </Badge>
+              {sortedUsers.length > 0 ? (
+                sortedUsers.map((user) => (
+                  <TableRow key={user.cnic}>
+                    <TableCell className="font-medium">{user.cnic}</TableCell>
+                    <TableCell>{user.fullName}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.createdAt
+                        ? new Date(user.createdAt).toLocaleDateString()
+                        : "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={user.status === "approved" ? "default" : "secondary"}
+                        className={
+                          user.status === "approved"
+                            ? "bg-green-500 hover:bg-green-600"
+                            : user.status === "pending"
+                              ? "bg-yellow-500 hover:bg-yellow-600"
+                              : "bg-red-500 hover:bg-red-600"
+                        }
+                      >
+                        {user.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{user.documents?.length || 0}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    No users found matching the current filters.
                   </TableCell>
-                  <TableCell>{new Date(user.registrationDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={user.status === "Active" ? "default" : "secondary"}
-                      className={user.status === "Active" ? "bg-green-500" : "bg-gray-500"}
-                    >
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{user.filings}</TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>

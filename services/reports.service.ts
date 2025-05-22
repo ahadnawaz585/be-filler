@@ -9,7 +9,7 @@ interface FilingSummary {
   pending: number;
 }
 
-interface MonthlyStats {
+export interface IMonthlyStats {
   [month: string]: {
     filings: number;
     approved: number;
@@ -53,7 +53,7 @@ interface FilingQueryParams {
 
 export class ReportService extends BaseService {
   constructor() {
-    super(axiosInstance, "/api/v1/reports");
+    super(axiosInstance, "/api/v1/secure/reports");
   }
 
   // Get filings summary
@@ -62,8 +62,8 @@ export class ReportService extends BaseService {
   }
 
   // Get monthly stats for a given year
-  async getMonthlyStats(year: number): Promise<MonthlyStats> {
-    return this.get<MonthlyStats>(`/monthly?year=${year}`);
+  async getMonthlyStats(year: number): Promise<IMonthlyStats> {
+    return this.get<IMonthlyStats>(`/monthly?year=${year}`);
   }
 
   // Get monthly graph stats for a given year
@@ -75,9 +75,9 @@ export class ReportService extends BaseService {
   async getFilingsFiltered(query?: FilingQueryParams): Promise<Filing[]> {
     const queryString = query
       ? `?${Object.entries(query)
-          .filter(([_, value]) => value !== undefined)
-          .map(([key, value]) => `${key}=${encodeURIComponent(value as string)}`)
-          .join("&")}`
+        .filter(([_, value]) => value !== undefined)
+        .map(([key, value]) => `${key}=${encodeURIComponent(value as string)}`)
+        .join("&")}`
       : "";
     return this.get<Filing[]>(`/filings/filter${queryString}`);
   }

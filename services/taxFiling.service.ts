@@ -1,9 +1,22 @@
 import { axiosInstance } from "@/lib/ApiClient";
 import { BaseService } from "./base.service";
-import { CreateTaxFilingDto, UpdateFilingStatusDto } from "../../Server/src/modules/taxFiling/dto/taxFiling.dto";
+
+export interface CreateTaxFilingDto {
+  taxYear: number;
+  filingType: 'individual' | 'business';
+  grossIncome: number;
+  taxPaid: number;
+  documents: string[];
+}
+
+export interface UpdateFilingStatusDto {
+  status: 'under_review' | 'completed' | 'rejected';
+  remarks?: string;
+  assignedTo?: string;
+}
 
 // Define interface for the tax filing data structure
-interface TaxFiling {
+export interface ITaxFiling {
   id: string;
   userId: string;
   taxYear: number;
@@ -25,37 +38,37 @@ interface TaxFiling {
 
 export class TaxFilingService extends BaseService {
   constructor() {
-    super(axiosInstance, "/api/v1/tax-filings");
+    super(axiosInstance, "/api/v1/secure/taxFiling");
   }
 
   // Create a new tax filing
-  async create(userId: string, data: CreateTaxFilingDto): Promise<TaxFiling> {
-    return this.post<TaxFiling>("/", { ...data, userId });
+  async create(userId: string, data: CreateTaxFilingDto): Promise<ITaxFiling> {
+    return this.post<ITaxFiling>("/", { ...data, userId });
   }
 
   // Get tax filings for a specific user
-  async getByUser(userId: string): Promise<TaxFiling[]> {
-    return this.get<TaxFiling[]>(`/my?userId=${userId}`);
+  async getByUser(userId: string): Promise<ITaxFiling[]> {
+    return this.get<ITaxFiling[]>(`/my?userId=${userId}`);
   }
 
   // Get all tax filings
-  async getAll(): Promise<TaxFiling[]> {
-    return this.get<TaxFiling[]>("/");
+  async getAll(): Promise<ITaxFiling[]> {
+    return this.get<ITaxFiling[]>("/");
   }
 
   // Get tax filing by ID
-  async getById(id: string): Promise<TaxFiling> {
-    return this.get<TaxFiling>(`/${id}`);
+  async getById(id: string): Promise<ITaxFiling> {
+    return this.get<ITaxFiling>(`/${id}`);
   }
 
   // Update tax filing status
-  async updateStatus(id: string, data: UpdateFilingStatusDto, userId: string): Promise<TaxFiling> {
-    return this.put<TaxFiling>(`/${id}/status`, { ...data, userId });
+  async updateStatus(id: string, data: UpdateFilingStatusDto, userId: string): Promise<ITaxFiling> {
+    return this.put<ITaxFiling>(`/${id}/status`, { ...data, userId });
   }
 
   // Get tax filing history
-  async getHistory(id: string): Promise<TaxFiling['history']> {
-    const filing = await this.get<TaxFiling>(`/${id}/history`);
+  async getHistory(id: string): Promise<ITaxFiling['history']> {
+    const filing = await this.get<ITaxFiling>(`/${id}/history`);
     return filing.history;
   }
 }

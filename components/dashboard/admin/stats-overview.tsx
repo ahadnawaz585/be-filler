@@ -2,21 +2,69 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, FileCheck, Clock, DollarSign } from "lucide-react"
-import { mockAdminUsers, mockRecentFilers, mockMonthlyFilings, mockRevenueData } from "@/lib/constants"
+import { mockRevenueData } from "@/lib/constants"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { formatCurrency } from "@/lib/utils"
+import { IMonthlyStats } from "@/services/reports.service"
 
-export function StatsOverview() {
-  // Calculate some stats
-  const totalUsers = mockAdminUsers.length
-  const activeUsers = mockAdminUsers.filter((user) => user.status === "Active").length
-  const totalFilings = mockAdminUsers.reduce((sum, user) => sum + user.filings, 0)
-  const pendingFilings = mockRecentFilers.filter((filing) => filing.status === "Under Review").length
+interface StatsOverviewProps {
+  activeUsers: number
+  totalFilings: number
+  pendingFilings: number
+  monthlyStats: IMonthlyStats
+}
 
-  // Revenue calculations
-  const thisMonthRevenue = mockRevenueData[new Date().getMonth()].revenue
-  const lastMonthRevenue = mockRevenueData[new Date().getMonth() - 1 < 0 ? 11 : new Date().getMonth() - 1].revenue
-  const revenueChange = ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
+export function StatsOverview({ activeUsers, totalFilings, pendingFilings, monthlyStats }: StatsOverviewProps) {
+
+  // Convert monthlyStats object to array format for charts
+  const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+
+  const chartData = monthNames.map((month, index) => {
+    const monthData = monthlyStats[index] || monthlyStats[month] || {
+      filings: 0,
+      approved: 0,
+      rejected: 0,
+      pending: 0
+    };
+
+    return {
+      month: month,
+      filings: monthData.filings,
+      approved: monthData.approved,
+      rejected: monthData.rejected,
+      pending: monthData.pending
+    };
+  });
+
+  // Get current month data safely
+  const currentMonth = new Date().getMonth();
+  const currentMonthData = monthlyStats[currentMonth] || monthlyStats[monthNames[currentMonth]] || {
+    filings: 0,
+    approved: 0,
+    rejected: 0,
+    pending: 0
+  };
+
+  // Get previous month data safely
+  const previousMonth = currentMonth - 1 < 0 ? 11 : currentMonth - 1;
+  const previousMonthData = monthlyStats[previousMonth] || monthlyStats[monthNames[previousMonth]] || {
+    filings: 0,
+    approved: 0,
+    rejected: 0,
+    pending: 0
+  };
+
+  // Calculate month-over-month change
+  const monthlyChange = currentMonthData.filings - previousMonthData.filings;
+  const isPositiveChange = monthlyChange >= 0;
+
+  // Revenue calculations (keeping mock data for now)
+  const thisMonthRevenue = mockRevenueData[currentMonth]?.revenue || 0;
+  const lastMonthRevenue = mockRevenueData[previousMonth]?.revenue || 0;
+  const revenueChange = lastMonthRevenue !== 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -29,7 +77,7 @@ export function StatsOverview() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold">{totalUsers}</div>
+                <div className="text-2xl font-bold">{activeUsers}</div>
                 <p className="text-xs text-muted-foreground mt-1">{activeUsers} active users</p>
               </div>
               <div className="w-10 h-10 bg-[#af0e0e]/10 rounded-full flex items-center justify-center">
@@ -65,17 +113,10 @@ export function StatsOverview() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold">{mockMonthlyFilings[new Date().getMonth()].filings}</div>
+                <div className="text-2xl font-bold">{currentMonthData.filings}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {mockMonthlyFilings[new Date().getMonth()].filings >
-                  mockMonthlyFilings[new Date().getMonth() - 1 < 0 ? 11 : new Date().getMonth() - 1].filings
-                    ? "↑"
-                    : "↓"}
-                  {Math.abs(
-                    mockMonthlyFilings[new Date().getMonth()].filings -
-                      mockMonthlyFilings[new Date().getMonth() - 1 < 0 ? 11 : new Date().getMonth() - 1].filings,
-                  )}{" "}
-                  from last month
+                  {isPositiveChange ? "↑" : "↓"}
+                  {Math.abs(monthlyChange)} from last month
                 </p>
               </div>
               <div className="w-10 h-10 bg-[#af0e0e]/10 rounded-full flex items-center justify-center">
@@ -108,7 +149,7 @@ export function StatsOverview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Filings Chart */}
+        {/* Monthly Filings Chart - Using Real Data */}
         <Card>
           <CardHeader>
             <CardTitle>Monthly Filings</CardTitle>
@@ -118,7 +159,7 @@ export function StatsOverview() {
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={mockMonthlyFilings}
+                  data={chartData}
                   margin={{
                     top: 5,
                     right: 10,
@@ -135,13 +176,45 @@ export function StatsOverview() {
                       borderColor: "var(--border)",
                       color: "var(--foreground)",
                     }}
+                    formatter={(value, name) => {
+                      if (name === 'filings') return [value, 'Total Filings'];
+                      if (name === 'approved') return [value, 'Approved'];
+                      if (name === 'rejected') return [value, 'Rejected'];
+                      if (name === 'pending') return [value, 'Pending'];
+                      return [value, name];
+                    }}
                   />
                   <Line
                     type="monotone"
                     dataKey="filings"
-                    stroke="var(--chart-1)"
+                    stroke="#af0e0e"
                     activeDot={{ r: 8 }}
                     strokeWidth={2}
+                    name="filings"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="approved"
+                    stroke="#22c55e"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    name="approved"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="rejected"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    name="rejected"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="pending"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    name="pending"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -149,7 +222,7 @@ export function StatsOverview() {
           </CardContent>
         </Card>
 
-        {/* Revenue Chart */}
+        {/* Revenue Chart - Still using mock data */}
         <Card>
           <CardHeader>
             <CardTitle>Monthly Revenue</CardTitle>
@@ -181,7 +254,7 @@ export function StatsOverview() {
                   <Line
                     type="monotone"
                     dataKey="revenue"
-                    stroke="var(--chart-2)"
+                    stroke="#8b5cf6"
                     activeDot={{ r: 8 }}
                     strokeWidth={2}
                   />
