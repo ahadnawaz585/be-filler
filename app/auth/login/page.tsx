@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { AuthService } from "@/services/auth.service"
 import { Lock, Mail } from "lucide-react"
 import Cookies from "js-cookie"
+import { isAuthenticated } from "@/lib/auth"
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -26,6 +27,17 @@ export default function LoginPage() {
   const { toast } = useToast()
   const router = useRouter()
 
+  const isAuth = isAuthenticated()
+  if (isAuth) {
+    // toast({
+    //   title: "Already logged in",
+    //   description: "You are already logged in. Redirecting to dashboard...",
+    //   variant: "default",
+    // })
+    setTimeout(() => {
+      router.push("/dashboard")
+    }, 500)
+  }
   const {
     register,
     handleSubmit,
@@ -64,11 +76,11 @@ export default function LoginPage() {
         setTimeout(() => {
           const user: any = result.user
           if (user.role === "admin") {
-            router.push("/dashboard/admin");
+            window.location.href = "/dashboard/admin";
           } else if (user.role === "accountant") {
-            router.push("/dashboard/accountant")
+            window.location.href = "/dashboard/accountant"
           } else {
-            router.push("/dashboard")
+            window.location.href = "/dashboard"
           }
         }, 1500)
       } else {

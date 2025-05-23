@@ -1,58 +1,90 @@
+
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Search, UserPlus, Filter, ArrowUpDown } from "lucide-react"
-import { IUser } from "@/services/user.service"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Label } from "@/components/ui/label"
+import { Search, UserPlus, Filter, ArrowUpDown, X, Settings, ChevronDown } from "lucide-react"
+import { IUser, UserServices } from "@/services/user.service"
+import { toast } from "@/hooks/use-toast"
+
+export interface CreateUserDto {
+  fullName: string;
+  email: string;
+  password: string;
+  phoneNumber: string;
+  cnic: string;
+}
 
 interface UserTableProps {
   users: IUser[];
+  onCreateUser?: (userData: CreateUserDto) => Promise<void> | void;
+  onUpdateUserRole?: (userId: string, newRole: string) => Promise<void> | void;
+  onStatusUpdate?: (userId: string, newStatus: string) => Promise<IUser | void>;
 }
 
-export function UsersTable({ users }: UserTableProps) {
+export function UsersTable({ users: initialUsers, onCreateUser, onUpdateUserRole, onStatusUpdate }: UserTableProps) {
+  const [users, setUsers] = useState<IUser[]>(initialUsers)
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [sortField, setSortField] = useState("createdAt")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null)
+  const [userRoles, setUserRoles] = useState<Record<string, string>>({})
+  const [userStatuses, setUserStatuses] = useState<Record<string, string>>({})
+  const [updatingStatusUserId, setUpdatingStatusUserId] = useState<string | null>(null)
+  const [createUserData, setCreateUserData] = useState<CreateUserDto>({
+    fullName: "",
+    email: "",
+    password: "",
+    phoneNumber: "",
+    cnic: ""
+  })
+
+  // Sync users state with initialUsers prop
+  useEffect(() => {
+    console.log("Updating users state with initialUsers:", initialUsers)
+    setUsers(initialUsers)
+  }, [initialUsers])
 
   // Filter users based on search term and filters
   const filteredUsers = users.filter((user) => {
-    // Search term filter - using actual IUser properties
     const matchesSearch =
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.cnic.toLowerCase().includes(searchTerm.toLowerCase())
+      (user.fullName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (user.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (user.cnic?.toLowerCase() || "").includes(searchTerm.toLowerCase())
 
-    // Role filter
     const matchesRole = roleFilter === "all" || user.role === roleFilter
 
-    // Status filter
     const matchesStatus = statusFilter === "all" || user.status === statusFilter
 
+    console.log("Filtering user:", { user, matchesSearch, matchesRole, matchesStatus })
     return matchesSearch && matchesRole && matchesStatus
   })
 
   // Sort users
   const sortedUsers = [...filteredUsers].sort((a, b) => {
-    let aValue: any = a[sortField as keyof IUser]
-    let bValue: any = b[sortField as keyof IUser]
+    let aValue: any = a[sortField as keyof IUser] ?? ""
+    let bValue: any = b[sortField as keyof IUser] ?? ""
 
-    // Handle date comparison
     if (sortField === "createdAt") {
-      aValue = new Date(aValue).getTime()
-      bValue = new Date(bValue).getTime()
+      aValue = aValue ? new Date(aValue).getTime() : 0
+      bValue = bValue ? new Date(bValue).getTime() : 0
     }
 
-    // Handle array length comparison (for documents)
     if (sortField === "documents") {
-      aValue = (aValue as any[]).length
-      bValue = (bValue as any[]).length
+      aValue = (aValue as any[] | undefined)?.length ?? 0
+      bValue = (bValue as any[] | undefined)?.length ?? 0
     }
 
     if (sortDirection === "asc") {
@@ -61,6 +93,8 @@ export function UsersTable({ users }: UserTableProps) {
       return aValue < bValue ? 1 : -1
     }
   })
+
+  console.log("Sorted users:", sortedUsers)
 
   // Handle sort
   const handleSort = (field: string) => {
@@ -72,6 +106,157 @@ export function UsersTable({ users }: UserTableProps) {
     }
   }
 
+  // Handle create user form submission
+  const handleCreateUser = async () => {
+    if (!onCreateUser) return
+
+    if (!createUserData.fullName || !createUserData.email || !createUserData.password || !createUserData.phoneNumber || !createUserData.cnic) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(createUserData.email)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const cnicRegex = /^\d{5}-\d{7}-\d{1}$/
+    if (!cnicRegex.test(createUserData.cnic)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid CNIC format (12345-1234567-1)",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const phoneRegex = /^(\+92|0)?[0-9]{10}$/
+    if (!phoneRegex.test(createUserData.phoneNumber.replace(/\s/g, ''))) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid phone number",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      setIsCreating(true)
+      await onCreateUser(createUserData)
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      })
+      setCreateUserData({
+        fullName: "",
+        email: "",
+        password: "",
+        phoneNumber: "",
+        cnic: ""
+      })
+      setIsCreateModalOpen(false)
+    } catch (error: any) {
+      console.error("Error creating user:", error)
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create user. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  // Handle input changes
+  const handleInputChange = (field: keyof CreateUserDto, value: string) => {
+    setCreateUserData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  // Handle role update
+  const handleRoleUpdate = async (userId: string, newRole: string) => {
+    if (!onUpdateUserRole) return
+    try {
+      setUpdatingRoleUserId(userId)
+      setUserRoles(prev => ({ ...prev, [userId]: newRole }))
+      await onUpdateUserRole(userId, newRole)
+      toast({
+        title: "Success",
+        description: `User role updated to ${newRole} `,
+      })
+    } catch (error: any) {
+      console.error("Error updating user role:", error)
+      setUserRoles(prev => {
+        const updated = { ...prev }
+        delete updated[userId]
+        return updated
+      })
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user role. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setUpdatingRoleUserId(null)
+    }
+  }
+
+  // Handle status update
+  const handleStatusUpdate = async (userId: string, newStatus: string) => {
+    if (!onStatusUpdate) return
+    try {
+      setUpdatingStatusUserId(userId)
+      setUserStatuses(prev => ({ ...prev, [userId]: newStatus }))
+      const updatedUser = await onStatusUpdate(userId, newStatus)
+      if (updatedUser && typeof updatedUser === 'object') {
+        setUsers(prev =>
+          prev.map(user =>
+            user._id === userId ? { ...user, status: newStatus as IUser["status"] } : user
+          )
+        )
+      }
+      toast({
+        title: "Success",
+        description: `User status updated to ${newStatus} `,
+      })
+    } catch (error: any) {
+      console.error("Error updating user status:", error)
+      setUserStatuses(prev => {
+        const updated = { ...prev }
+        delete updated[userId]
+        return updated
+      })
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user status. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setUpdatingStatusUserId(null)
+    }
+  }
+
+  // Get current role for a user
+  const getCurrentRole = (user: IUser) => {
+    return userRoles[user._id] || user.role
+  }
+
+  // Get current status for a user
+  const getCurrentStatus = (user: IUser) => {
+    return userStatuses[user._id] || user.status
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -80,7 +265,7 @@ export function UsersTable({ users }: UserTableProps) {
             <CardTitle>All Users</CardTitle>
             <CardDescription>Manage your registered users ({sortedUsers.length} total)</CardDescription>
           </div>
-          <Button variant="outline" className="ml-auto">
+          <Button variant="outline" className="ml-auto" onClick={() => setIsCreateModalOpen(true)}>
             <UserPlus className="h-4 w-4 mr-2" />
             Add User
           </Button>
@@ -155,18 +340,19 @@ export function UsersTable({ users }: UserTableProps) {
                   Docs
                   {sortField === "documents" && <ArrowUpDown className="ml-1 h-4 w-4 inline" />}
                 </TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedUsers.length > 0 ? (
                 sortedUsers.map((user) => (
-                  <TableRow key={user.cnic}>
+                  <TableRow key={user._id}>
                     <TableCell className="font-medium">{user.cnic}</TableCell>
                     <TableCell>{user.fullName}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
-                        {user.role}
+                        {getCurrentRole(user)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -176,24 +362,65 @@ export function UsersTable({ users }: UserTableProps) {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={user.status === "approved" ? "default" : "secondary"}
+                        variant={getCurrentStatus(user) === "approved" ? "default" : "secondary"}
                         className={
-                          user.status === "approved"
+                          getCurrentStatus(user) === "approved"
                             ? "bg-green-500 hover:bg-green-600"
-                            : user.status === "pending"
+                            : getCurrentStatus(user) === "pending"
                               ? "bg-yellow-500 hover:bg-yellow-600"
                               : "bg-red-500 hover:bg-red-600"
                         }
                       >
-                        {user.status}
+                        {getCurrentStatus(user)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">{user.documents?.length || 0}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex gap-2 justify-center">
+                        <Select
+                          value={getCurrentRole(user)}
+                          onValueChange={(newRole) => handleRoleUpdate(user._id, newRole)}
+                          disabled={updatingRoleUserId === user._id}
+                        >
+                          <SelectTrigger className="w-28 h-8 text-xs">
+                            <Settings className="h-3 w-3 mr-1" />
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="accountant">Accountant</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          value={getCurrentStatus(user)}
+                          onValueChange={(newStatus) => handleStatusUpdate(user._id, newStatus)}
+                          disabled={updatingStatusUserId === user._id}
+                        >
+                          <SelectTrigger className="w-28 h-8 text-xs">
+                            <Settings className="h-3 w-3 mr-1" />
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="approved">Approved</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {(updatingRoleUserId === user._id || updatingStatusUserId === user._id) && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Updating...
+                        </div>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No users found matching the current filters.
                   </TableCell>
                 </TableRow>
@@ -201,6 +428,87 @@ export function UsersTable({ users }: UserTableProps) {
             </TableBody>
           </Table>
         </div>
+
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add New User</DialogTitle>
+              <DialogDescription>
+                Enter the details for the new user account.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="fullName">Full Name *</Label>
+                <Input
+                  id="fullName"
+                  placeholder="Enter full name"
+                  value={createUserData.fullName}
+                  onChange={(e) => handleInputChange("fullName", e.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={createUserData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={createUserData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="phoneNumber">Phone Number *</Label>
+                <Input
+                  id="phoneNumber"
+                  placeholder="03XX-XXXXXXX or +92XXXXXXXXXX"
+                  value={createUserData.phoneNumber}
+                  onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="cnic">CNIC *</Label>
+                <Input
+                  id="cnic"
+                  placeholder="12345-1234567-1"
+                  value={createUserData.cnic}
+                  onChange={(e) => handleInputChange("cnic", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateModalOpen(false)}
+                disabled={isCreating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateUser}
+                disabled={isCreating}
+              >
+                {isCreating ? "Creating..." : "Create User"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   )

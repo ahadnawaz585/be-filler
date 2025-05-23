@@ -1,15 +1,47 @@
+
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { FileCheck, ArrowRight, CalendarClock, Check, AlertCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { FileCheck, CalendarClock, Check, AlertCircle } from "lucide-react"
 import { taxYears } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { isAuthenticated, getCurrentUser } from "@/lib/auth"
+import { TaxFilingService } from "@/services/taxFiling.service"
+import { useToast } from "@/hooks/use-toast"
+
+interface FilingStep {
+  id: string
+  name: string
+  completed: boolean
+}
+
+interface TaxFiling {
+  id: string
+  taxYear: string
+  status: string
+  progress: number
+  steps: FilingStep[]
+}
 
 export function TaxFilingStatus() {
+  const router = useRouter()
+  const { toast } = useToast()
   const [selectedYear, setSelectedYear] = useState(taxYears[0].value)
+  const [filing, setFiling] = useState<TaxFiling | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Default steps if no filing exists
+  const defaultSteps: FilingStep[] = [
+    { id: "1", name: "Registration", completed: false },
+    { id: "2", name: "Personal Information", completed: false },
+    { id: "3", name: "Income Details", completed: false },
+    { id: "4", name: "Deductions & Credits", completed: false },
+    { id: "5", name: "Assets & Liabilities", completed: false },
+    { id: "6", name: "Review & Submit", completed: false },
+  ]
 
   // Time remaining calculation
   const currentDate = new Date()
@@ -17,18 +49,97 @@ export function TaxFilingStatus() {
   const timeRemaining = deadlineDate.getTime() - currentDate.getTime()
   const daysRemaining = Math.max(0, Math.ceil(timeRemaining / (1000 * 60 * 60 * 24)))
 
-  // Mock filing progress data
-  const filingProgress = 75 // percentage
+  useEffect(() => {
+    const fetchFiling = async () => {
+      if (!isAuthenticated()) {
+        console.log("Redirecting to /auth/login due to unauthenticated user")
+        router.push("/auth/login")
+        return
+      }
 
-  // Filing steps
-  const filingSteps = [
-    { id: 1, name: "Registration", completed: true },
-    { id: 2, name: "Personal Information", completed: true },
-    { id: 3, name: "Income Details", completed: true },
-    { id: 4, name: "Deductions & Credits", completed: false },
-    { id: 5, name: "Assets & Liabilities", completed: false },
-    { id: 6, name: "Review & Submit", completed: false },
-  ]
+      const user = getCurrentUser()
+      if (!user || !user.id) {
+        console.log("Redirecting to /auth/login due to missing or invalid user")
+        router.push("/auth/login")
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const taxService = new TaxFilingService()
+        const filings = await taxService.getByUser(user.id)
+        console.log("Fetched filings:", filings)
+
+        const matchedFiling = filings.find((f) => f.taxYear === selectedYear)
+        if (matchedFiling) {
+          setFiling(matchedFiling)
+        } else {
+          // No filing for selected year
+          setFiling({
+            id: "",
+            taxYear: selectedYear,
+            status: "not started",
+            progress: 0,
+            steps: defaultSteps,
+          })
+        }
+      } catch (err: any) {
+        console.error("Error fetching tax filings:", err.message)
+        setError("Failed to load tax filing status")
+        toast({
+          title: "Error",
+          description: "Unable to load tax filing status. Please try again.",
+          variant: "destructive",
+        })
+        // Fallback to "not started"
+        setFiling({
+          id: "",
+          taxYear: selectedYear,
+          status: "not started",
+          progress: 0,
+          steps: defaultSteps,
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchFiling()
+  }, [selectedYear, router, toast])
+
+  if (loading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Tax Filing Progress</CardTitle>
+          <CardDescription>Complete your tax return for the selected tax year</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-sm text-muted-foreground">Loading filing status...</div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Tax Filing Progress</CardTitle>
+          <CardDescription>Complete your tax return for the selected tax year</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-sm text-red-500">{error}</div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const steps = filing?.steps || defaultSteps
+  const progress = filing?.progress || 0
+  const status = filing?.status || "not started"
 
   return (
     <Card className="w-full">
@@ -60,7 +171,9 @@ export function TaxFilingStatus() {
               <FileCheck className="h-10 w-10 text-[#af0e0e] mr-4" />
               <div>
                 <h3 className="font-medium">Current Status</h3>
-                <p className="text-sm text-muted-foreground">Return in progress</p>
+                <p className="text-sm text-muted-foreground">
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </p>
               </div>
             </div>
             <div className="flex items-center">
@@ -72,14 +185,14 @@ export function TaxFilingStatus() {
             </div>
           </div>
 
-          {/* Progress Bar (Replaced with Custom CSS) */}
+          {/* Progress Bar */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium">Overall Progress</span>
-              <span className="text-sm font-medium">{filingProgress}%</span>
+              <span className="text-sm font-medium">{progress}%</span>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-[#af0e0e] transition-all" style={{ width: `${filingProgress}%` }} />
+              <div className="h-full bg-[#af0e0e] transition-all" style={{ width: `${progress}% ` }} />
             </div>
           </div>
 
@@ -87,12 +200,11 @@ export function TaxFilingStatus() {
           <div className="space-y-4">
             <h3 className="font-medium">Filing Steps</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {filingSteps.map((step) => (
+              {steps.map((step) => (
                 <div
                   key={step.id}
-                  className={`flex items-center p-3 rounded-lg border ${
-                    step.completed ? "bg-[#af0e0e]/5 border-[#af0e0e]/20" : "bg-muted border-border"
-                  }`}
+                  className={`flex items - center p - 3 rounded - lg border ${step.completed ? "bg-[#af0e0e]/5 border-[#af0e0e]/20" : "bg-muted border-border"
+                    } `}
                 >
                   {step.completed ? (
                     <Check className="h-5 w-5 text-[#af0e0e] mr-3" />
@@ -119,20 +231,6 @@ export function TaxFilingStatus() {
           )}
         </div>
       </CardContent>
-      <CardFooter>
-        <div className="w-full flex flex-col sm:flex-row gap-3">
-          <Link href={`/dashboard/file-taxes?year=${selectedYear}`} className="flex-1">
-            <Button className="w-full bg-[#af0e0e] hover:bg-[#8a0b0b]">
-              Continue Filing <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-          <Link href="/dashboard/tax-calculator" className="flex-1">
-            <Button variant="outline" className="w-full">
-              Tax Calculator
-            </Button>
-          </Link>
-        </div>
-      </CardFooter>
     </Card>
   )
 }

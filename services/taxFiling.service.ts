@@ -18,7 +18,7 @@ export interface UpdateFilingStatusDto {
 // Define interface for the tax filing data structure
 export interface ITaxFiling {
   id: string;
-  userId: string;
+  user: string;
   taxYear: number;
   filingType: 'individual' | 'business';
   grossIncome: number;
@@ -42,12 +42,17 @@ export class TaxFilingService extends BaseService {
   }
 
   // Create a new tax filing
-  async create(userId: string, data: CreateTaxFilingDto): Promise<ITaxFiling> {
+  async create(userId: string, data: any): Promise<ITaxFiling> {
+    console.log("Creating tax filing with data:", data);
     return this.post<ITaxFiling>("/", { ...data, userId });
+  }
+  async createAcc(userId: string, data: CreateTaxFilingDto): Promise<ITaxFiling> {
+    return this.post<ITaxFiling>("/create-acc", { ...data, userId });
   }
 
   // Get tax filings for a specific user
   async getByUser(userId: string): Promise<ITaxFiling[]> {
+    console.log("Fetching tax filings for user ID:", userId);
     return this.get<ITaxFiling[]>(`/my?userId=${userId}`);
   }
 
@@ -62,8 +67,9 @@ export class TaxFilingService extends BaseService {
   }
 
   // Update tax filing status
-  async updateStatus(id: string, data: UpdateFilingStatusDto, userId: string): Promise<ITaxFiling> {
-    return this.put<ITaxFiling>(`/${id}/status`, { ...data, userId });
+  async updateStatus(id: string, data: UpdateFilingStatusDto): Promise<ITaxFiling> {
+    console.log("Updating tax filing status:", { id, data });
+    return this.put<ITaxFiling>(`/${id}/status`, { data });
   }
 
   // Get tax filing history

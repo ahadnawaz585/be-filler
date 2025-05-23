@@ -1,9 +1,8 @@
 import { axiosInstance } from "@/lib/ApiClient";
 import { BaseService } from "./base.service";
-import { CreateNotificationDto } from "../../Server/src/modules/notifications/dto/notifications.dto";
 
 // Define interface for the notification data structure
-interface Notification {
+export interface INotification {
   id: string;
   user: string;
   message: string;
@@ -14,30 +13,37 @@ interface Notification {
   updatedAt?: string;
 }
 
+export interface CreateNotificationDto {
+  user: string;
+  message: string;
+  type?: 'info' | 'warning' | 'action';
+  link?: string;
+}
+
 export class NotificationService extends BaseService {
   constructor() {
-    super(axiosInstance, "/api/v1/notifications");
+    super(axiosInstance, "/api/v1/secure/notification");
   }
 
   // Get notifications for a specific user
-  async getUserNotifications(userId: string): Promise<Notification[]> {
-    return this.get<Notification[]>(`/?userId=${userId}`);
+  async getUserNotifications(userId: string): Promise<INotification[]> {
+    return this.get<INotification[]>(`/?userId=${userId}`);
   }
 
   // Create and send a new notification
-  async send(user: string, message: string, type: 'info' | 'warning' | 'action', link?: string): Promise<Notification> {
-    return this.post<Notification>("/", { user, message, type, link });
+  async send(user: string, message: string, type: 'info' | 'warning' | 'action', link?: string): Promise<INotification> {
+    return this.post<INotification>("/", { user, message, type, link });
   }
 
   // Mark a notification as read
-  async markAsRead(id: string): Promise<Notification> {
-    return this.put<Notification>(`/${id}/read`, {});
+  async markAsRead(id: string): Promise<INotification> {
+    return this.put<INotification>(`/${id}/read`, {});
   }
 
   // Delete a notification
   //ahad bhai check this error
   async delete(id: string): Promise<any> {
-    return this.delete<void>(`/${id}`);
+    return this.delete(`/${id}`);
   }
 
   // Get the count of unread notifications for a user

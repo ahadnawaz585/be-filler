@@ -1,13 +1,33 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { mockRecentFilers } from "@/lib/constants"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { FileCheck, Clock } from "lucide-react"
 
-export function RecentFilers() {
+export interface RecentFiler {
+  id: string;
+  // userId: string;
+  taxYear: number;
+  filingType: 'individual' | 'business';
+  grossIncome: number;
+  taxPaid: number;
+  documents: string[];
+  status: 'under_review' | 'completed' | 'rejected';
+  createdAt?: string;
+  updatedAt?: string;
+  user: {
+    fullName: string;
+    email: string;
+  };
+}
+
+interface RecentFilersProps {
+  filers: RecentFiler[];
+}
+
+export function RecentFilers({ filers }: RecentFilersProps) {
   return (
     <Card className="col-span-2">
       <CardHeader>
@@ -25,7 +45,7 @@ export function RecentFilers() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
+              {/* <TableHead>ID</TableHead> */}
               <TableHead>User</TableHead>
               <TableHead>Tax Year</TableHead>
               <TableHead>Filing Date</TableHead>
@@ -34,23 +54,23 @@ export function RecentFilers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockRecentFilers.map((filer) => (
-              <TableRow key={filer.id}>
-                <TableCell className="font-medium">{filer.id}</TableCell>
-                <TableCell>{filer.user}</TableCell>
+            {filers.map((filer) => (
+              <TableRow key={filer._id}>
+                {/* <TableCell className="font-medium">{filer.id}</TableCell> */}
+                <TableCell>{filer.user.fullName}</TableCell>
                 <TableCell>{filer.taxYear}</TableCell>
-                <TableCell>{formatDate(filer.filingDate)}</TableCell>
-                <TableCell>{formatCurrency(filer.taxAmount)}</TableCell>
+                <TableCell>{filer.createdAt ? formatDate(filer.createdAt) : 'N/A'}</TableCell>
+                <TableCell>{formatCurrency(filer.taxPaid)}</TableCell>
                 <TableCell>
                   <Badge
                     variant="outline"
                     className={
-                      filer.status === "Completed"
+                      filer.status === "completed"
                         ? "border-green-500 text-green-500"
                         : "border-yellow-500 text-yellow-500"
                     }
                   >
-                    {filer.status === "Completed" ? (
+                    {filer.status === "completed" ? (
                       <FileCheck className="h-3 w-3 mr-1" />
                     ) : (
                       <Clock className="h-3 w-3 mr-1" />

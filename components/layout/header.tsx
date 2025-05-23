@@ -1,28 +1,51 @@
+
 "use client"
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Menu, X, ChevronDown } from "lucide-react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/ui/mode-toggle"
 import { cn } from "@/lib/utils"
+import Cookies from "js-cookie"
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
 
   useEffect(() => {
     const checkAuth = () => {
-      const userData = localStorage.getItem("user")
-      if (userData) {
-        setIsLoggedIn(true)
-        const user = JSON.parse(userData)
-        setUserRole(user.role)
+      console.log("Checking auth...");
+      const user = Cookies.get("user")
+      const token = Cookies.get("token")
+      console.log("Cookies - user:", user, "token:", token);
+      if (user && token) {
+        try {
+          const parsedUser = JSON.parse(user)
+          if (parsedUser.role) {
+            setIsLoggedIn(true)
+            setUserRole(parsedUser.role)
+            console.log("Logged in, role:", parsedUser.role);
+          } else {
+            console.log("Invalid user data: no role");
+            setIsLoggedIn(false)
+            setUserRole(null)
+          }
+        } catch (error) {
+          console.error("Error parsing user cookie:", error);
+          setIsLoggedIn(false)
+          setUserRole(null)
+        }
+      } else {
+        console.log("Not logged in: missing user or token");
+        setIsLoggedIn(false)
+        setUserRole(null)
       }
     }
 
@@ -37,6 +60,25 @@ const Header = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
+  }
+
+  const handleLogOut = () => {
+    console.log("Logging out...");
+    Cookies.remove("user", { path: "/" })
+    Cookies.remove("token", { path: "/" })
+    setIsLoggedIn(false)
+    setUserRole(null)
+    setIsMenuOpen(false)
+    // Re-check auth to ensure state is updated
+    const user = Cookies.get("user")
+    const token = Cookies.get("token")
+    console.log("After logout - user:", user, "token:", token);
+    if (!user && !token) {
+      console.log("Cookies cleared successfully");
+    } else {
+      console.warn("Cookies not cleared properly");
+    }
+    router.push("/")
   }
 
   const navLinks = [
@@ -66,6 +108,8 @@ const Header = () => {
     admin: [{ name: "Admin Panel", path: "/dashboard/admin" }],
     accountant: [{ name: "Accounts", path: "/dashboard/accountant" }],
   }
+
+  console.log("Rendering Header - isLoggedIn:", isLoggedIn, "userRole:", userRole);
 
   return (
     <header
@@ -103,7 +147,6 @@ const Header = () => {
                     >
                       {link.name} <ChevronDown className="ml-1 h-4 w-4" />
                     </button>
-                    {/* Add a transparent bridge to prevent gap between button and dropdown */}
                     <div className="absolute left-0 h-2 w-full"></div>
                     <div className="absolute left-0 top-full w-64 rounded-md shadow-lg py-1 bg-background border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
                       {serviceLinks.map((service) => (
@@ -170,18 +213,8 @@ const Header = () => {
 
           <div className="hidden md:flex items-center space-x-4">
             <ModeToggle />
-
             {isLoggedIn ? (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  localStorage.removeItem("user")
-                  localStorage.removeItem("token")
-                  setIsLoggedIn(false)
-                  setUserRole(null)
-                  window.location.href = "/"
-                }}
-              >
+              <Button variant="outline" onClick={handleLogOut}>
                 Log Out
               </Button>
             ) : (
@@ -301,14 +334,7 @@ const Header = () => {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => {
-                    localStorage.removeItem("user")
-                    localStorage.removeItem("token")
-                    setIsLoggedIn(false)
-                    setUserRole(null)
-                    setIsMenuOpen(false)
-                    window.location.href = "/"
-                  }}
+                  onClick={handleLogOut}
                 >
                   Log Out
                 </Button>

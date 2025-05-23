@@ -42,9 +42,9 @@ interface UserActivity {
   lastActivity: string;
 }
 
-interface RevenueSummary {
-  totalRevenue: number;
-  monthlyRevenue: { [month: string]: number };
+export interface IRevenueSummary {
+  totalGrossIncome: number;
+  totalTaxPaid: number;
 }
 
 interface FilingQueryParams {
@@ -93,8 +93,8 @@ export class ReportService extends BaseService {
   }
 
   // Get revenue summary
-  async getRevenueSummary(): Promise<RevenueSummary> {
-    return this.get<RevenueSummary>("/revenue");
+  async getRevenueSummary(): Promise<IRevenueSummary> {
+    return this.get<IRevenueSummary>("/revenue");
   }
 
   // Generate PDF report
