@@ -1,16 +1,15 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
-import { verifyOTP, generateOTP, sendOTP } from "@/lib/auth"
+import { axiosInstance } from "@/lib/ApiClient"
+import axios from "axios"
 
 const otpSchema = z.object({
   digit1: z.string().length(1).regex(/^\d$/),
@@ -25,15 +24,35 @@ type OTPFormValues = z.infer<typeof otpSchema>
 
 interface OTPFormProps {
   email: string
+  formData: { fullName: string; cnic: string; password: string, phoneNumber: string } | null
   onOTPVerified: () => void
 }
 
-export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
+
+
+// async function resendOTPToBackend(email: string, formData: { fullName: string; cnic: string; password: string }): Promise<{ success: boolean; message?: string }> {
+//   try {
+//     const response = await axios.post("http://localhost:3001/api/v1/auth/resend-otp", {
+//       email,
+//       fullName: formData.fullName,
+//       cnic: formData.cnic,
+//       password: formData.password,
+//     })
+//     console.log("Resend OTP response:", response.data)
+//     return { success: true, message: response.data.message }
+//   } catch (error: any) {
+//     console.error("Error resending OTP:", error.message, error.response?.data)
+//     return {
+//       success: false,
+//       message: error.response?.data?.message || "Failed to resend OTP",
+//     }
+//   }
+// }
+
+export function OTPForm({ email, formData, onOTPVerified }: OTPFormProps) {
   const { toast } = useToast()
-  const router = useRouter()
   const [isResending, setIsResending] = useState(false)
   const [timeLeft, setTimeLeft] = useState(60)
-  const [storedOTP, setStoredOTP] = useState<string>("")
 
   const {
     register,
@@ -52,17 +71,6 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
       digit6: "",
     },
   })
-
-  // Send OTP on initial load
-  useEffect(() => {
-    const sendInitialOTP = async () => {
-      const otp = generateOTP()
-      setStoredOTP(otp)
-      await sendOTP(email, otp)
-    }
-
-    sendInitialOTP()
-  }, [email])
 
   // Handle countdown timer
   useEffect(() => {
@@ -88,12 +96,33 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
     }
   }
 
+  async function verifyOTPWithBackend(email: string, otp: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await axios.post("http://localhost:3001/api/v1/auth/register", {
+        email,
+        ...formData,
+        otp,
+      })
+      return { success: true, message: response.data.message }
+    } catch (error: any) {
+      console.error("Error verifying OTP:", error.message, error.response?.data)
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to verify OTP",
+      }
+    }
+  }
+
   // Handler for OTP submission
   const onSubmit = async (data: OTPFormValues) => {
     try {
       const enteredOTP = Object.values(data).join("")
+      console.log("Entered OTP:", enteredOTP)
+      console.log("Email:", email)
 
-      if (verifyOTP(email, enteredOTP, storedOTP)) {
+      const result = await verifyOTPWithBackend(email, enteredOTP)
+
+      if (result.success) {
         toast({
           title: "Success",
           description: "OTP verification successful.",
@@ -103,13 +132,14 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
       } else {
         toast({
           title: "Verification Failed",
-          description: "The OTP you entered is invalid. Please try again.",
+          description: result.message || "The OTP you entered is invalid. Please try again.",
           variant: "destructive",
         })
         reset()
         setFocus("digit1")
       }
     } catch (error) {
+      console.error("OTP verification error:", error)
       toast({
         title: "Error",
         description: "Failed to verify OTP. Please try again.",
@@ -120,20 +150,37 @@ export function OTPForm({ email, onOTPVerified }: OTPFormProps) {
 
   // Handler for resending OTP
   const handleResendOTP = async () => {
+    if (!formData) {
+      toast({
+        title: "Error",
+        description: "Missing registration data. Please start over.",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       setIsResending(true)
-      const otp = generateOTP()
-      setStoredOTP(otp)
-      await sendOTP(email, otp)
+      console.log("Resending OTP to:", email)
 
-      toast({
-        title: "OTP Resent",
-        description: "A new OTP has been sent to your email.",
-        variant: "default",
-      })
+      const result = await resendOTPToBackend(email, formData)
 
-      setTimeLeft(60)
+      if (result.success) {
+        toast({
+          title: "OTP Resent",
+          description: "A new OTP has been sent to your email.",
+          variant: "default",
+        })
+        setTimeLeft(60)
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to resend OTP. Please try again.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
+      console.error("Failed to resend OTP:", error)
       toast({
         title: "Error",
         description: "Failed to resend OTP. Please try again.",
