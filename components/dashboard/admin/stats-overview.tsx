@@ -1,213 +1,227 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, FileCheck, Clock, DollarSign } from 'lucide-react'
-import { mockAdminUsers, mockMonthlyFilings, mockRevenueData, mockRecentFilers } from "@/services/localStorage/constants"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { formatCurrency } from "@/services/localStorage/utils"
-import { LocalStorage } from "@/services/localStorage/localStorage"
+import { Users, FileCheck, Clock, DollarSign } from "lucide-react"
+import { formatCurrency } from "@/lib/utils"
+import { IMonthlyStats, IRevenueSummary } from "@/services/reports.service"
+import { Line } from "react-chartjs-2"
+import {
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js"
 
-// Define types for our data
-interface AdminUser {
-  id: string
-  name: string
-  email: string
-  role: string
-  status: string
-  filings: number
+// Register Chart.js components
+ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Legend)
+
+interface StatsOverviewProps {
+  activeUsers: number
+  totalFilings: number
+  pendingFilings: number
+  monthlyStats: IMonthlyStats
+  revenueSummary: IRevenueSummary
 }
 
-interface Filing {
-  id: string
-  userId: string
-  type: string
-  status: string
-  date: string
-}
+export function StatsOverview({ activeUsers, totalFilings, pendingFilings, monthlyStats, revenueSummary }: StatsOverviewProps) {
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-interface MonthlyFiling {
-  month: string
-  filings: number
-}
-
-interface RevenueData {
-  month: string
-  revenue: number
-}
-
-// LocalStorage keys
-const LS_KEYS = {
-  ADMIN_USERS: "admin_users_data",
-  RECENT_FILINGS: "admin_recent_filings",
-  MONTHLY_FILINGS: "admin_monthly_filings",
-  REVENUE_DATA: "admin_revenue_data",
-  LAST_UPDATED: "admin_stats_last_updated",
-}
-
-export function StatsOverview() {
-  // State for our data
-  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
-  const [recentFilers, setRecentFilers] = useState<Filing[]>([])
-  const [monthlyFilings, setMonthlyFilings] = useState<MonthlyFiling[]>([])
-  const [revenueData, setRevenueData] = useState<RevenueData[]>([])
-  const [lastUpdated, setLastUpdated] = useState<string>("")
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Load data from localStorage or use mock data
-  useEffect(() => {
-    // Try to load data from localStorage
-    const storedUsers = LocalStorage.getItem<AdminUser[] | any>(LS_KEYS.ADMIN_USERS, true)
-    const storedFilings = LocalStorage.getItem<Filing[] | any>(LS_KEYS.RECENT_FILINGS, true)
-    const storedMonthlyFilings = LocalStorage.getItem<MonthlyFiling[] | any>(LS_KEYS.MONTHLY_FILINGS, true)
-    const storedRevenueData = LocalStorage.getItem<RevenueData[] | any>(LS_KEYS.REVENUE_DATA, true)
-    const storedLastUpdated = LocalStorage.getItem<string | any>(LS_KEYS.LAST_UPDATED, false)
-
-    // If we have stored data, use it
-    if (storedUsers && storedFilings && storedMonthlyFilings && storedRevenueData) {
-      setAdminUsers(storedUsers)
-      setRecentFilers(storedFilings)
-      setMonthlyFilings(storedMonthlyFilings)
-      setRevenueData(storedRevenueData)
-      if (storedLastUpdated) {
-        setLastUpdated(storedLastUpdated)
-      }
-    } else {
-      // Otherwise use mock data and store it in localStorage
-      setAdminUsers(mockAdminUsers)
-      setRecentFilers(mockRecentFilers)
-      setMonthlyFilings(mockMonthlyFilings)
-      setRevenueData(mockRevenueData)
-
-      // Store mock data in localStorage for future use
-      LocalStorage.setItem(LS_KEYS.ADMIN_USERS, mockAdminUsers)
-      LocalStorage.setItem(LS_KEYS.RECENT_FILINGS, mockRecentFilers)
-      LocalStorage.setItem(LS_KEYS.MONTHLY_FILINGS, mockMonthlyFilings)
-      LocalStorage.setItem(LS_KEYS.REVENUE_DATA, mockRevenueData)
-
-      // Set last updated timestamp
-      const now = new Date().toISOString()
-      LocalStorage.setItem(LS_KEYS.LAST_UPDATED, now)
-      setLastUpdated(now)
+  // Convert monthlyStats to array for filings chart
+  const filingsChartData = monthNames.map((month, index) => {
+    const monthData = monthlyStats[index] || monthlyStats[month] || {
+      filings: 0,
+      approved: 0,
+      rejected: 0,
+      pending: 0,
     }
-
-    setIsLoading(false)
-  }, [])
-
-  // Function to update data in localStorage
-  const updateStats = (
-    newUsers?: AdminUser[],
-    newFilings?: Filing[],
-    newMonthlyFilings?: MonthlyFiling[],
-    newRevenueData?: RevenueData[]
-  ) => {
-    // Update state and localStorage for each data type if provided
-    if (newUsers) {
-      setAdminUsers(newUsers)
-      LocalStorage.setItem(LS_KEYS.ADMIN_USERS, newUsers)
+    return {
+      month: month,
+      filings: monthData.filings,
+      approved: monthData.approved,
+      rejected: monthData.rejected,
+      pending: monthData.pending,
     }
+  })
 
-    if (newFilings) {
-      setRecentFilers(newFilings)
-      LocalStorage.setItem(LS_KEYS.RECENT_FILINGS, newFilings)
+  // Calculate monthly revenue (fixed fee per filing)
+  const FEE_PER_FILING = 100 // $100 per filing
+  const revenueChartData = monthNames.map((month, index) => {
+    const monthData = monthlyStats[index] || monthlyStats[month] || { filings: 0 }
+    return {
+      month: month,
+      revenue: monthData.filings * FEE_PER_FILING,
     }
+  })
 
-    if (newMonthlyFilings) {
-      setMonthlyFilings(newMonthlyFilings)
-      LocalStorage.setItem(LS_KEYS.MONTHLY_FILINGS, newMonthlyFilings)
-    }
-
-    if (newRevenueData) {
-      setRevenueData(newRevenueData)
-      LocalStorage.setItem(LS_KEYS.REVENUE_DATA, newRevenueData)
-    }
-
-    // Update last updated timestamp
-    const now = new Date().toISOString()
-    LocalStorage.setItem(LS_KEYS.LAST_UPDATED, now)
-    setLastUpdated(now)
-  }
-
-  // Function to refresh data (could be called from a refresh button)
-  const refreshData = () => {
-    // In a real app, this would fetch fresh data from an API
-    // For this example, we'll just update with the mock data
-    updateStats(mockAdminUsers, mockRecentFilers, mockMonthlyFilings, mockRevenueData)
-  }
-
-  // Calculate stats from the loaded data
-  const totalUsers = adminUsers.length
-  const activeUsers = adminUsers.filter((user) => user.status === "Active").length
-  const totalFilings = adminUsers.reduce((sum, user) => sum + user.filings, 0)
-  const pendingFilings = recentFilers.filter((filing) => filing.status === "Under Review").length
-
-  // Get current and previous month indices
+  // Get current and previous month data for filings
   const currentMonth = new Date().getMonth()
+  const currentMonthData = monthlyStats[currentMonth] || monthlyStats[monthNames[currentMonth]] || {
+    filings: 0,
+    approved: 0,
+    rejected: 0,
+    pending: 0,
+  }
   const previousMonth = currentMonth - 1 < 0 ? 11 : currentMonth - 1
+  const previousMonthData = monthlyStats[previousMonth] || monthlyStats[monthNames[previousMonth]] || {
+    filings: 0,
+    approved: 0,
+    rejected: 0,
+    pending: 0,
+  }
 
-  // Revenue calculations
-  const thisMonthRevenue = revenueData[currentMonth]?.revenue || 0
-  const lastMonthRevenue = revenueData[previousMonth]?.revenue || 1 // Avoid division by zero
-  const revenueChange = ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
+  // Calculate month-over-month filings change
+  const monthlyChange = currentMonthData.filings - previousMonthData.filings
+  const isPositiveChange = monthlyChange >= 0
 
-  // Monthly filings comparison
-  const thisMonthFilings = monthlyFilings[currentMonth]?.filings || 0
-  const lastMonthFilings = monthlyFilings[previousMonth]?.filings || 0
-  const filingsChange = thisMonthFilings - lastMonthFilings
+  // Calculate month-over-month revenue change
+  const thisMonthRevenue = revenueChartData[currentMonth]?.revenue || 0
+  const lastMonthRevenue = revenueChartData[previousMonth]?.revenue || 0
+  const revenueChange = lastMonthRevenue !== 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
-                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-3 w-24 bg-gray-200 rounded animate-pulse mt-2"></div>
-                  </div>
-                  <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {[1, 2].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <div className="h-5 w-32 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-4 w-48 bg-gray-200 rounded animate-pulse mt-2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px] bg-gray-100 rounded animate-pulse"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    )
+  // Filings chart configuration
+  const filingsChartConfig = {
+    labels: monthNames,
+    datasets: [
+      {
+        label: "Total Filings",
+        data: filingsChartData.map(d => d.filings),
+        borderColor: "#af0e0e",
+        backgroundColor: "#af0e0e",
+        fill: false,
+        tension: 0.4,
+      },
+      {
+        label: "Approved",
+        data: filingsChartData.map(d => d.approved),
+        borderColor: "#22c55e",
+        backgroundColor: "#22c55e",
+        fill: false,
+        borderDash: [5, 5],
+        tension: 0.4,
+      },
+      {
+        label: "Rejected",
+        data: filingsChartData.map(d => d.rejected),
+        borderColor: "#ef4444",
+        backgroundColor: "#ef4444",
+        fill: false,
+        borderDash: [5, 5],
+        tension: 0.4,
+      },
+      {
+        label: "Pending",
+        data: filingsChartData.map(d => d.pending),
+        borderColor: "#f59e0b",
+        backgroundColor: "#f59e0b",
+        fill: false,
+        borderDash: [5, 5],
+        tension: 0.4,
+      },
+    ],
+  }
+
+  // Revenue chart configuration
+  const revenueChartConfig = {
+    labels: monthNames,
+    datasets: [
+      {
+        label: "Revenue",
+        data: revenueChartData.map(d => d.revenue),
+        borderColor: "#8b5cf6",
+        backgroundColor: "#8b5cf6",
+        fill: false,
+        tension: 0.4,
+      },
+    ],
+  }
+
+  // Chart options for filings (counts)
+  const filingsChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+        labels: { color: "#4b5563" },
+      },
+      tooltip: {
+        backgroundColor: "#ffffff",
+        titleColor: "#111827",
+        bodyColor: "#111827",
+        borderColor: "#d1d5db",
+        borderWidth: 1,
+        callbacks: {
+          label: function (context: any) {
+            return `${context.dataset.label}: ${context.parsed.y}`
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { color: "#e5e7eb" },
+        ticks: { color: "#4b5563" },
+      },
+      y: {
+        grid: { color: "#e5e7eb" },
+        ticks: {
+          color: "#4b5563",
+          callback: function (value: number) {
+            return value // Show plain numbers for filings
+          },
+        },
+      },
+    },
+  }
+
+  // Chart options for revenue (dollars)
+  const revenueChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+        labels: { color: "#4b5563" },
+      },
+      tooltip: {
+        backgroundColor: "#ffffff",
+        titleColor: "#111827",
+        bodyColor: "#111827",
+        borderColor: "#d1d5db",
+        borderWidth: 1,
+        callbacks: {
+          label: function (context: any) {
+            return `Revenue: $${context.parsed.y.toFixed(2)}`
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { color: "#e5e7eb" },
+        ticks: { color: "#4b5563" },
+      },
+      y: {
+        grid: { color: "#e5e7eb" },
+        ticks: {
+          color: "#4b5563",
+          callback: function (value: number) {
+            return `$${value}` // Show dollar amounts for revenue
+          },
+        },
+      },
+    },
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Dashboard Overview</h2>
-        <button
-          onClick={refreshData}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Last updated: {lastUpdated ? new Date(lastUpdated).toLocaleString() : "Never"}
-        </button>
-      </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* User Stats Card */}
+        {/* Total Users Card */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
@@ -215,7 +229,7 @@ export function StatsOverview() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold">{totalUsers}</div>
+                <div className="text-2xl font-bold">{activeUsers}</div>
                 <p className="text-xs text-muted-foreground mt-1">{activeUsers} active users</p>
               </div>
               <div className="w-10 h-10 bg-[#af0e0e]/10 rounded-full flex items-center justify-center">
@@ -225,7 +239,7 @@ export function StatsOverview() {
           </CardContent>
         </Card>
 
-        {/* Filings Stats Card */}
+        {/* Total Filings Card */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Filings</CardTitle>
@@ -243,7 +257,7 @@ export function StatsOverview() {
           </CardContent>
         </Card>
 
-        {/* Current Month Filing Card */}
+        {/* This Month Filings Card */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">This Month Filings</CardTitle>
@@ -251,10 +265,9 @@ export function StatsOverview() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold">{thisMonthFilings}</div>
+                <div className="text-2xl font-bold">{currentMonthData.filings}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {filingsChange >= 0 ? "↑" : "↓"}
-                  {Math.abs(filingsChange)} from last month
+                  {isPositiveChange ? "↑" : "↓"} {Math.abs(monthlyChange)} from last month
                 </p>
               </div>
               <div className="w-10 h-10 bg-[#af0e0e]/10 rounded-full flex items-center justify-center">
@@ -264,7 +277,7 @@ export function StatsOverview() {
           </CardContent>
         </Card>
 
-        {/* Revenue Card */}
+        {/* Monthly Revenue Card */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Revenue</CardTitle>
@@ -274,8 +287,7 @@ export function StatsOverview() {
               <div>
                 <div className="text-2xl font-bold">{formatCurrency(thisMonthRevenue)}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {revenueChange >= 0 ? "↑" : "↓"}
-                  {Math.abs(revenueChange).toFixed(1)}% from last month
+                  {revenueChange >= 0 ? "↑" : "↓"} {Math.abs(revenueChange).toFixed(1)}% from last month
                 </p>
               </div>
               <div className="w-10 h-10 bg-[#af0e0e]/10 rounded-full flex items-center justify-center">
@@ -295,40 +307,12 @@ export function StatsOverview() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={monthlyFilings}
-                  margin={{
-                    top: 5,
-                    right: 10,
-                    left: 10,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="month" stroke="var(--muted-foreground)" />
-                  <YAxis stroke="var(--muted-foreground)" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--background)",
-                      borderColor: "var(--border)",
-                      color: "var(--foreground)",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="filings"
-                    stroke="var(--chart-1)"
-                    activeDot={{ r: 8 }}
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <Line data={filingsChartConfig} options={filingsChartOptions} />
             </div>
           </CardContent>
         </Card>
 
-        {/* Revenue Chart */}
+        {/* Monthly Revenue Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Monthly Revenue</CardTitle>
@@ -336,36 +320,7 @@ export function StatsOverview() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={revenueData}
-                  margin={{
-                    top: 5,
-                    right: 10,
-                    left: 10,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="month" stroke="var(--muted-foreground)" />
-                  <YAxis stroke="var(--muted-foreground)" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--background)",
-                      borderColor: "var(--border)",
-                      color: "var(--foreground)",
-                    }}
-                    formatter={(value) => [formatCurrency(value as number), "Revenue"]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="var(--chart-2)"
-                    activeDot={{ r: 8 }}
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <Line data={revenueChartConfig} options={revenueChartOptions} />
             </div>
           </CardContent>
         </Card>

@@ -13,20 +13,32 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
-    // Check if user is authenticated
-    if (!isAuthenticated()) {
+    // Check authentication and user
+    const isAuth = isAuthenticated()
+    if (!isAuth) {
       router.push("/auth/login")
       return
     }
 
-    // Get current user information
     const currentUser = getCurrentUser()
-    if (currentUser) {
-      setUser(currentUser)
+    if (!currentUser) {
+      router.push("/auth/login")
+      return
+    }
+
+    // Set user and handle role-based redirection
+    setUser(currentUser)
+    if (currentUser.role === "admin") {
+      router.push("/dashboard/admin")
+      return
+    }
+    if (currentUser.role === "accountant") {
+      router.push("/dashboard/accountant") // Fix typo: "dasboard" → "dashboard"
+      return
     }
 
     setLoading(false)
-  }, [router])
+  }, [router]) // Remove 'user' from dependencies
 
   if (loading) {
     return (
@@ -36,6 +48,10 @@ export default function Dashboard() {
     )
   }
 
+  if (!user) {
+    return <div className="text-center py-8 text-red-500">Failed to load user data</div>
+  }
+
   return (
     <div className="container px-4 mx-auto py-8 mt-16">
       <div className="mb-8">
@@ -43,12 +59,10 @@ export default function Dashboard() {
         <p className="text-muted-foreground">Here's an overview of your tax filing status and recent activity</p>
       </div>
 
-      {/* Check UserStats for Progress component usage */}
       <div className="grid grid-cols-1 gap-6 mb-6">
-        <UserStats />
+        <UserStats userId={user.id} />
       </div>
 
-      {/* Check TaxFilingStatus and RecentActivity for Progress component usage */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <TaxFilingStatus />

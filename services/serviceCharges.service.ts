@@ -1,35 +1,44 @@
-import { axiosInstance } from "@/lib/ApiClient"; // Adjust path to ApiClient.ts
-import { BaseService } from "./base.service";// Adjust path to BaseService.ts
-import { environment } from "@/environment/environment";
-import { ServiceCharge } from "@/types/serviceCharges";
+import { axiosInstance } from "@/lib/ApiClient";
+import { BaseService } from "./base.service";
+import { CreateServiceChargeDto, UpdateServiceChargeDto } from "../../Server/src/modules/serviceCharges/dto/serviceCharges.dto";
 
+// Define interface for the service charge data structure
+interface ServiceCharge {
+  id: string;
+  name: string;
+  amount: number;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
-export default class ServiceChargesService extends BaseService {
-    constructor() {
-        super(axiosInstance, environment.apiUrl + "/secure/serviceCharges");
-    }
+export class ServiceChargesService extends BaseService {
+  constructor() {
+    super(axiosInstance, "/api/v1/service-charges");
+  }
 
-    async getServiceChargeById(id: string): Promise<ServiceCharge> {
-        return this.get<ServiceCharge>(`/${id}`)
-    }
+  // Get all service charges
+  async getAllServiceCharges(): Promise<ServiceCharge[]> {
+    return this.get<ServiceCharge[]>("/");
+  }
 
-    // Get all service charges
-    async getAllServiceCharges(): Promise<ServiceCharge[]> {
-        return this.get<ServiceCharge[]>("/");
-    }
+  // Get service charge by ID
+  async getServiceChargeById(id: string): Promise<ServiceCharge> {
+    return this.get<ServiceCharge>(`/${id}`);
+  }
 
-    // Create a new service charge
-    async createServiceCharges(data: Partial<ServiceCharge>): Promise<ServiceCharge> {
-        return this.post<ServiceCharge>("/", data);
-    }
+  // Create a new service charge
+  async createServiceCharge(data: CreateServiceChargeDto): Promise<ServiceCharge> {
+    return this.post<ServiceCharge>("/", data);
+  }
 
-    // Update a service charge
-    async updateServiceCharge(id: string, data: Partial<ServiceCharge>): Promise<ServiceCharge> {
-        return this.put<ServiceCharge>(`/${id}`, data);
-    }
+  // Update an existing service charge
+  async updateServiceCharge(id: string, data: UpdateServiceChargeDto): Promise<ServiceCharge> {
+    return this.put<ServiceCharge>(`/${id}`, data);
+  }
 
-    // Delete a service charge
-    async deleteServiceCharge(id: string): Promise<void> {
-        return this.delete<void>(`/${id}`);
-    }
+  // Delete a service charge by ID
+  async deleteServiceCharge(id: string): Promise<void> {
+    return this.delete<void>(`/${id}`);
+  }
 }

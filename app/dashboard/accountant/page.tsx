@@ -2,14 +2,19 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { isAuthenticated, getCurrentUser } from "@/services/localStorage/auth"
+import { isAuthenticated, getCurrentUser } from "@/lib/auth"
 import { FilingStats } from "@/components/dashboard/accountant/filing-stats"
 import { ClientList } from "@/components/dashboard/accountant/client-list"
+import { toast } from "@/hooks/use-toast"
+import { ITaxFiling, TaxFilingService } from "@/services/taxFiling.service"
+import { IUser, UserServices } from "@/services/user.service"
 
 export default function AccountantDashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const [taxFilings, setTaxFilings] = useState<ITaxFiling[]>([])
+  const [users, setUsers] = useState<IUser[]>([])
 
   useEffect(() => {
     // Check if user is authenticated
@@ -19,17 +24,52 @@ export default function AccountantDashboard() {
     }
 
     // Get current user information
-    const currentUser: any = getCurrentUser()
+    const currentUser = getCurrentUser()
+    console.log("Client-side user:", currentUser)
+    if (!currentUser) {
+      router.push("/auth/login")
+      return
+    }
     if (currentUser) {
-      if (currentUser.role !== "accountant") {
+      if (currentUser.role == "accountant") {
+      }
+      if (currentUser.role == "admin") {
+        router.push("/dashboard/admin")
+      }
+      if (currentUser.role == "user") {
         router.push("/dashboard")
-        return
       }
       setUser(currentUser)
     }
 
     setLoading(false)
   }, [router])
+
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const ts = new TaxFilingService()
+        const response: ITaxFiling[] = await ts.getAll();
+        setTaxFilings(response)
+
+        const us = new UserServices()
+        const users: IUser[] = await us.getAllUsers();
+        const clients = users.filter((user) => user.role === "user");
+        setUsers(clients)
+
+      } catch (err) {
+        console.error("Error fetching data:", err)
+        toast({
+          title: "Error Fetching Data",
+          description: "Failed to fetch data",
+          variant: "destructive"
+        })
+      }
+
+    }
+    fetchData();
+  }, [])
 
   if (loading) {
     return (
@@ -47,8 +87,8 @@ export default function AccountantDashboard() {
       </div>
 
       <div className="space-y-8">
-        <FilingStats />
-        <ClientList />
+        <FilingStats taxFilings={taxFilings} />
+        <ClientList clients={users} taxFilings={taxFilings} onFilingCreated={() => { }} />
       </div>
     </div>
   )

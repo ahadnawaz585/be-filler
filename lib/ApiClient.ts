@@ -13,14 +13,14 @@ const handleError = (error: any): Promise<never> => {
     error.response?.data === "Invalid Token"
   ) {
     auth.clearToken();
-    window.location.href = "/login";
+    window.location.href = "/auth/login";
   }
   if (
     error.response &&
     (error.response.status === 401 || error.response.statusText === "Unauthorized")
   ) {
     auth.clearToken();
-    window.location.href = "/login";
+    window.location.href = "/auth/login";
   }
 
   console.error("An error occurred:", error);

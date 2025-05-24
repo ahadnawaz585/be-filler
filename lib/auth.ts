@@ -103,21 +103,22 @@ export const loginUser = (email: string, password: string) => {
 export const isAuthenticated = () => {
   if (typeof window === "undefined") return false
 
-  const token = Cookies.get("auth_token")
-  // const user = localStorage.getItem("user")
+  const token = Cookies.get("token")
+  const userStr = Cookies.get("user")
 
-  return !!token
+  return !!token && !!userStr
 }
 
 // Mock function to get current user
 export const getCurrentUser = () => {
   if (typeof window === "undefined") return null
 
-  const userStr = localStorage.getItem("user")
+  const userStr = Cookies.get("user")
 
   if (userStr) {
     try {
-      return JSON.parse(userStr)
+      const user = JSON.parse(userStr)
+      return user
     } catch (e) {
       return null
     }
