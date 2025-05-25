@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { FileCheck, Clock } from "lucide-react"
 
 export interface RecentFiler {
-  id: string;
-  // userId: string;
+  _id: string;
   taxYear: number;
   filingType: 'individual' | 'business';
   grossIncome: number;
@@ -20,7 +19,7 @@ export interface RecentFiler {
   user: {
     fullName: string;
     email: string;
-  };
+  } | null; // Allow user to be null
 }
 
 interface RecentFilersProps {
@@ -45,7 +44,6 @@ export function RecentFilers({ filers }: RecentFilersProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              {/* <TableHead>ID</TableHead> */}
               <TableHead>User</TableHead>
               <TableHead>Tax Year</TableHead>
               <TableHead>Filing Date</TableHead>
@@ -54,10 +52,9 @@ export function RecentFilers({ filers }: RecentFilersProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filers.map((filer) => (
+            {filers.map((filer: RecentFiler) => (
               <TableRow key={filer._id}>
-                {/* <TableCell className="font-medium">{filer.id}</TableCell> */}
-                <TableCell>{filer.user.fullName}</TableCell>
+                <TableCell>{filer.user?.fullName || 'Unknown User'}</TableCell>
                 <TableCell>{filer.taxYear}</TableCell>
                 <TableCell>{filer.createdAt ? formatDate(filer.createdAt) : 'N/A'}</TableCell>
                 <TableCell>{formatCurrency(filer.taxPaid)}</TableCell>
