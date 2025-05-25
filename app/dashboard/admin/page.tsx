@@ -79,27 +79,34 @@ export default function AdminDashboard() {
       // let allDataFetched = true // Track if all data is successfully fetched
 
       // Fetch Users
-      try {
-        console.log("Fetching users...")
-        const us = new UserServices()
-        const usersRes = await us.getAllUsers()
-        console.log("Users response:", usersRes)
-        if (usersRes && Array.isArray(usersRes) && usersRes.length > 0) {
-          setUsers(usersRes)
-          console.log("Users fetched successfully:", usersRes.length)
-        } else {
-          // allDataFetched = false
-          console.warn("No users data received")
+   try {
+      console.log("Fetching users...")
+      const us = new UserServices()
+      const usersRes = await us.getAllUsers()
+      console.log("Users response:", usersRes)
+      if (usersRes && Array.isArray(usersRes) && usersRes.length > 0) {
+        // Filter out invalid user objects
+        const validUsers = usersRes.filter(
+          (u): u is IUser => u != null && u._id != null && u.fullName != null && u.email != null && u.cnic != null
+        )
+        setUsers(validUsers)
+        console.log("Users fetched successfully:", validUsers.length)
+        if (validUsers.length < usersRes.length) {
+          console.warn(`Filtered out ${usersRes.length - validUsers.length} invalid user objects`)
         }
-      } catch (error) {
-        console.error("Error fetching users:", error)
-        toast({
-          title: 'Error Fetching Users',
-          description: 'Failed to fetch users data',
-          variant: 'destructive'
-        })
-        // allDataFetched = false
+      } else {
+        console.warn("No users data received")
+        setUsers([])
       }
+    } catch (error) {
+      console.error("Error fetching users:", error)
+      toast({
+        title: 'Error Fetching Users',
+        description: 'Failed to fetch users data',
+        variant: 'destructive'
+      })
+      setUsers([])
+    }
 
       // Fetch Tax Filings
       try {
@@ -220,7 +227,7 @@ export default function AdminDashboard() {
       })
     }
   }
-  const onUpdateUser = async (userId: string, data: Partial<IUser>): Promise<void> => {
+  const onUpdateUser = async (userId: string, data: string): Promise<void> => {
     try {
       const us = new UserServices()
       await us.updateStatus(userId, data)

@@ -58,11 +58,20 @@ export function UsersTable({ users: initialUsers, onCreateUser, onUpdateUserRole
   }, [initialUsers])
 
   // Filter users based on search term and filters
-  const filteredUsers = users.filter((user) => {
+const filteredUsers = users
+  .filter((user): user is IUser => {
+    // Skip if user is null, undefined, or missing required fields
+    if (!user || !user._id || !user.fullName || !user.email || !user.cnic) {
+      console.warn("Skipping invalid user:", user)
+      return false
+    }
+    return true
+  })
+  .filter((user) => {
     const matchesSearch =
-      (user.fullName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (user.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (user.cnic?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.cnic.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesRole = roleFilter === "all" || user.role === roleFilter
 
@@ -71,7 +80,6 @@ export function UsersTable({ users: initialUsers, onCreateUser, onUpdateUserRole
     console.log("Filtering user:", { user, matchesSearch, matchesRole, matchesStatus })
     return matchesSearch && matchesRole && matchesStatus
   })
-
   // Sort users
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     let aValue: any = a[sortField as keyof IUser] ?? ""

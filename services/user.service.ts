@@ -46,7 +46,7 @@ export class UserServices extends BaseService {
   async update(id: string, userData: Partial<IUser>): Promise<IUser> {
     return this.put<IUser>(`/${id}`, userData);
   }
-  async updateStatus(id: string, userData: Partial<IUser>): Promise<IUser> {
+  async updateStatus(id: string, userData: string): Promise<IUser> {
     return this.put<IUser>(`/${id}`, { status: userData });
   }
 
