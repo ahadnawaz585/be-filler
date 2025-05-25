@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { axiosInstance } from "@/lib/ApiClient"
 import axios from "axios"
+import { environment } from "@/environment/environment"
 
 const otpSchema = z.object({
   digit1: z.string().length(1).regex(/^\d$/),
@@ -32,7 +33,7 @@ interface OTPFormProps {
 
 // async function resendOTPToBackend(email: string, formData: { fullName: string; cnic: string; password: string }): Promise<{ success: boolean; message?: string }> {
 //   try {
-//     const response = await axios.post("http://localhost:3001/api/v1/auth/resend-otp", {
+//     const response = await axios.post(`${}/api/v1/auth/resend-otp", {
 //       email,
 //       fullName: formData.fullName,
 //       cnic: formData.cnic,
@@ -98,7 +99,7 @@ export function OTPForm({ email, formData, onOTPVerified }: OTPFormProps) {
 
   async function verifyOTPWithBackend(email: string, otp: string): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await axios.post("http://localhost:3001/api/v1/auth/register", {
+      const response = await axios.post(`${environment.apiUrl}/api/v1/auth/register`, {
         email,
         ...formData,
         otp,

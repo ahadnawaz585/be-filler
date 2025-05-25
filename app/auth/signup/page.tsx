@@ -14,6 +14,7 @@ import { OTPForm } from "@/components/auth/otp-form"
 import { UserForm } from "@/components/auth/user-form"
 import { FileDigit, Lock, Mail, Phone, User } from "lucide-react"
 import axios from "axios"
+import { environment } from "@/environment/environment"
 
 const signupSchema = z
   .object({
@@ -53,7 +54,7 @@ async function sendOTP(data: {
   password: string
 }): Promise<{ success: boolean; message?: string }> {
   try {
-    const response = await axios.post("http://localhost:3001/api/v1/auth/register", {
+    const response = await axios.post(`${environment.apiUrl}/api/v1/auth/register`, {
       email: data.email,
       fullName: data.fullName as string,
       phoneNumber: data.phoneNumber as string,
