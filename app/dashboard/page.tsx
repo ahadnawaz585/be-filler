@@ -2,10 +2,26 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+<<<<<<< Updated upstream
 import { isAuthenticated, getCurrentUser } from "@/lib/auth"
 import { UserStats } from "@/components/dashboard/user-stats"
 import { TaxFilingStatus } from "@/components/dashboard/tax-filing-status"
 import { RecentActivity } from "@/components/dashboard/recent-activity"
+=======
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import {
+  LayoutDashboard,
+  User,
+  Users,
+  FileText,
+  UserCheck,
+  Building,
+  Receipt,
+  DollarSign,
+  Calculator,
+} from "lucide-react"
+>>>>>>> Stashed changes
 
 export default function Dashboard() {
   const router = useRouter()
@@ -13,6 +29,7 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
+<<<<<<< Updated upstream
     // Check if user is authenticated
     if (!isAuthenticated()) {
       router.push("/auth/login")
@@ -23,10 +40,86 @@ export default function Dashboard() {
     const currentUser = getCurrentUser()
     if (currentUser) {
       setUser(currentUser)
+=======
+    // For development - bypass authentication and use mock user
+    const mockUser = {
+      id: "1",
+      name: "John Doe",
+      email: "john.doe@example.com",
+      role: "user",
+      phone: "+1234567890",
+>>>>>>> Stashed changes
     }
 
+    setUser(mockUser)
     setLoading(false)
   }, [router])
+<<<<<<< Updated upstream
+=======
+
+  const services = [
+    {
+      title: "Personal Tax Filing",
+      description: "File your individual income tax returns",
+      icon: User,
+      href: "/userServices/personal-tax-filing",
+      color: "bg-green-500",
+    },
+    {
+      title: "Family Tax Filing",
+      description: "File tax returns for family members",
+      icon: Users,
+      href: "/services/family-tax-filing",
+      color: "bg-purple-500",
+    },
+    {
+      title: "NTN Registration",
+      description: "Register for National Tax Number",
+      icon: FileText,
+      href: "/services/ntn-registration",
+      color: "bg-orange-500",
+    },
+    {
+      title: "IRIS Profile Update",
+      description: "Update your IRIS profile information",
+      icon: UserCheck,
+      href: "/services/iris-profile-update",
+      color: "bg-cyan-500",
+    },
+    {
+      title: "Business Incorporation",
+      description: "Register and incorporate your business",
+      icon: Building,
+      href: "/services/business-incorporation",
+      color: "bg-indigo-500",
+    },
+    {
+      title: "GST Registration",
+      description: "Register for Goods and Services Tax",
+      icon: Receipt,
+      href: "/services/gst-registration",
+      color: "bg-pink-500",
+    },
+    {
+      title: "Service Charges",
+      description: "View and pay service charges",
+      icon: DollarSign,
+      href: "/services/service-charges",
+      color: "bg-yellow-500",
+    },
+    {
+      title: "Salary Tax Calculator",
+      description: "Calculate your salary tax obligations",
+      icon: Calculator,
+      href: "/services/salary-tax-calculator",
+      color: "bg-red-500",
+    },
+  ]
+
+  const handleServiceClick = (href: string) => {
+    router.push(href)
+  }
+>>>>>>> Stashed changes
 
   if (loading) {
     return (
@@ -40,9 +133,10 @@ export default function Dashboard() {
     <div className="container px-4 mx-auto py-8 mt-16">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Welcome back, {user?.name || "User"}</h1>
-        <p className="text-muted-foreground">Here's an overview of your tax filing status and recent activity</p>
+        <p className="text-muted-foreground">Choose a service to get started with your tax and business needs</p>
       </div>
 
+<<<<<<< Updated upstream
       {/* Check UserStats for Progress component usage */}
       <div className="grid grid-cols-1 gap-6 mb-6">
         <UserStats />
@@ -56,6 +150,71 @@ export default function Dashboard() {
         <div>
           <RecentActivity />
         </div>
+=======
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {services.map((service, index) => {
+          const IconComponent = service.icon
+          return (
+            <Card
+              key={index}
+              className="hover:shadow-lg transition-shadow cursor-pointer group"
+              onClick={() => handleServiceClick(service.href)}
+            >
+              <CardHeader className="pb-4">
+                <div className="flex items-center space-x-3">
+                  <div
+                    className={`p-2 rounded-lg ${service.color} text-white group-hover:scale-110 transition-transform`}
+                  >
+                    <IconComponent className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg group-hover:text-[#af0e0e] transition-colors">
+                      {service.title}
+                    </CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm text-muted-foreground mb-4">{service.description}</CardDescription>
+                <Button
+                  variant="outline"
+                  className="w-full group-hover:bg-[#af0e0e] group-hover:text-white group-hover:border-[#af0e0e] transition-colors"
+                >
+                  Get Started
+                </Button>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Quick Stats Section */}
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="text-center">
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold text-[#af0e0e]">5</div>
+            <p className="text-sm text-muted-foreground">Active Filings</p>
+          </CardContent>
+        </Card>
+        <Card className="text-center">
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold text-green-600">12</div>
+            <p className="text-sm text-muted-foreground">Completed</p>
+          </CardContent>
+        </Card>
+        <Card className="text-center">
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold text-orange-600">3</div>
+            <p className="text-sm text-muted-foreground">Pending</p>
+          </CardContent>
+        </Card>
+        <Card className="text-center">
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold text-blue-600">₨ 45,000</div>
+            <p className="text-sm text-muted-foreground">Total Saved</p>
+          </CardContent>
+        </Card>
+>>>>>>> Stashed changes
       </div>
     </div>
   )
