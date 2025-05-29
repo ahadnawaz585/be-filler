@@ -40,7 +40,7 @@ export default function Dashboard() {
       title: "Personal Tax Filing",
       description: "File your individual income tax returns",
       icon: User,
-      href: "/userServices/personal-tax-filing",
+      href: "/user-services/personal-tax-filing",
       color: "bg-green-500",
     },
     {
@@ -54,7 +54,7 @@ export default function Dashboard() {
       title: "NTN Registration",
       description: "Register for National Tax Number",
       icon: FileText,
-      href: "/services/ntn-registration",
+      href: "/user-services/ntn-registration",
       color: "bg-orange-500",
     },
     {
@@ -75,21 +75,21 @@ export default function Dashboard() {
       title: "GST Registration",
       description: "Register for Goods and Services Tax",
       icon: Receipt,
-      href: "/services/gst-registration",
+      href: "/user-services/gst-registration",
       color: "bg-pink-500",
     },
     {
       title: "Service Charges",
       description: "View and pay service charges",
       icon: DollarSign,
-      href: "/services/service-charges",
+      href: "/user-services/service-charges",
       color: "bg-yellow-500",
     },
     {
       title: "Salary Tax Calculator",
       description: "Calculate your salary tax obligations",
       icon: Calculator,
-      href: "/services/salary-tax-calculator",
+      href: "/user-services/salary-tax-calculator",
       color: "bg-red-500",
     },
   ]
@@ -112,10 +112,41 @@ export default function Dashboard() {
 
   return (
     <div className="container px-4 mx-auto py-8 mt-16">
+
+
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Welcome back, {user?.name || "User"}</h1>
         <p className="text-muted-foreground">Choose a service to get started with your tax and business needs</p>
       </div>
+      {/* Quick Stats Section */}
+      <div className="mt-12 mb-12 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="text-center">
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold text-[#af0e0e]">5</div>
+            <p className="text-sm text-muted-foreground">Active Filings</p>
+          </CardContent>
+        </Card>
+        <Card className="text-center">
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold text-green-600">12</div>
+            <p className="text-sm text-muted-foreground">Completed</p>
+          </CardContent>
+        </Card>
+        <Card className="text-center">
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold text-orange-600">3</div>
+            <p className="text-sm text-muted-foreground">Pending</p>
+          </CardContent>
+        </Card>
+        <Card className="text-center">
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold text-blue-600">₨ 45,000</div>
+            <p className="text-sm text-muted-foreground">Total Saved</p>
+          </CardContent>
+        </Card>
+      </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {services.map((service, index) => {
@@ -154,33 +185,7 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Quick Stats Section */}
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-[#af0e0e]">5</div>
-            <p className="text-sm text-muted-foreground">Active Filings</p>
-          </CardContent>
-        </Card>
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">12</div>
-            <p className="text-sm text-muted-foreground">Completed</p>
-          </CardContent>
-        </Card>
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-orange-600">3</div>
-            <p className="text-sm text-muted-foreground">Pending</p>
-          </CardContent>
-        </Card>
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-blue-600">₨ 45,000</div>
-            <p className="text-sm text-muted-foreground">Total Saved</p>
-          </CardContent>
-        </Card>
-      </div>
+
     </div>
   )
 }

@@ -4,11 +4,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Plus, X, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
+import { TaxFilingService } from "@/services/taxFiling.service"
 
 interface IncomeDetailsStepProps {
   formData: any
@@ -17,15 +19,86 @@ interface IncomeDetailsStepProps {
 
 export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetailsStepProps) {
   const [currentIncomeIndex, setCurrentIncomeIndex] = useState(0)
+  const params = useParams()
+  const filingId = params.id as string
+  const [loading, setIsLoading] = useState(true)
+  const [stepDataFromAPI, setStepDataFromAPI] = useState<any>([])
 
-  const formatCurrency = (value: string) => {
-    const numericValue = value.replace(/[^\d]/g, "")
+  const formatCurrency = (value: string | number) => {
+    if (!value) return ""
+    const stringValue = typeof value === 'number' ? value.toString() : value
+    const numericValue = stringValue.replace(/[^\d]/g, "")
     return numericValue ? Number.parseInt(numericValue).toLocaleString() : ""
   }
 
   const handleCurrencyInput = (field: string, value: string) => {
     const numericValue = value.replace(/[^\d]/g, "")
-    handleInputChange(field, numericValue)
+    return numericValue
+  }
+
+  const stepData = async () => {
+    try {
+      const ts = new TaxFilingService();
+      const res = await ts.getStep(filingId, '2');
+      console.log('Raw API response:', JSON.stringify(res, null, 2));
+
+      // Process incomes to ensure all expected fields exist
+      const processedIncomes = (res.incomes || []).map((income: any) => {
+        if (income.type === 'business') {
+          return {
+            ...income,
+            details: {
+              businessIncome: income.details?.businessIncome || '',
+              businessExpenses: income.details?.businessExpenses || '',
+              businessType: income.details?.businessType || ''
+            }
+          }
+        }
+        return income
+      })
+
+      console.log('Processed incomes:', processedIncomes)
+      setStepDataFromAPI(processedIncomes)
+
+      // Extract income sources from incomes array
+      if (processedIncomes && processedIncomes.length > 0) {
+        const incomeSourceTypes = processedIncomes.map((income: any) => income.type);
+        console.log("Extracted income source types:", incomeSourceTypes);
+
+        // Always populate form data from API response
+        handleInputChange("incomeSources", incomeSourceTypes);
+        handleInputChange("incomes", processedIncomes);
+      }
+
+      // Handle any other fields that might come from the API
+      Object.keys(res).forEach(key => {
+        if (key !== 'incomes' && res[key]) {
+          handleInputChange(key, res[key]);
+        }
+      });
+
+    } catch (error) {
+      console.error("Error fetching step data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    console.log('formData:', JSON.stringify(formData, null, 2));
+    console.log('stepDataFromAPI:', JSON.stringify(stepDataFromAPI, null, 2));
+    if (filingId) {
+      stepData();
+    }
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Loading Income Sources...</h2>
+        <p className="text-sm text-muted-foreground">Please wait while we fetch your income sources.</p>
+      </div>
+    );
   }
 
   const incomeSourcesMap = {
@@ -47,41 +120,134 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
   const currentSourceId = selectedIncomeSources[currentIncomeIndex]
   const currentSourceTitle = incomeSourcesMap[currentSourceId as keyof typeof incomeSourcesMap]
 
+  const getIncomeDetails = (type: string) => {
+    console.log('=== DEBUG getIncomeDetails ===')
+    console.log('Type:', type)
+
+    // Initialize details to prevent undefined errors
+    let details = {};
+
+    // Try to get from stepDataFromAPI
+    const apiIncome = stepDataFromAPI.find((inc: any) => inc.type === type)
+
+    console.log('API Income found:', !!apiIncome)
+    console.log('Raw apiIncome:', JSON.stringify(apiIncome, null, 2))
+
+    if (apiIncome && apiIncome.details) {
+      details = { ...apiIncome.details }
+      console.log('Using API details:', details)
+    } else {
+      // Fallback to formData
+      const formIncome = (formData.incomes || []).find((inc: any) => inc.type === type)
+      details = formIncome ? { ...formIncome.details } : {}
+      console.log('Using form details:', details)
+    }
+
+    // Ensure business type has default structure
+    if (type === 'business') {
+      console.log('Business details before processing:', details)
+      details = {
+        businessIncome: details.businessIncome || '',
+        businessExpenses: details.businessExpenses || '',
+        businessType: details.businessType || '',
+        ...details
+      }
+      console.log('Business details after processing:', details)
+      console.log('businessIncome value:', details.businessIncome)
+      console.log('businessType value:', details.businessType)
+    }
+
+    console.log('Final details returned:', details)
+    console.log('=== END DEBUG ===')
+
+    return details
+  }
+
+  const updateIncomeDetails = (type: string, field: string, value: any) => {
+    console.log('=== updateIncomeDetails ENHANCED DEBUG ===')
+    console.log('Type:', type, 'Field:', field, 'Value:', value)
+    console.log('Value type:', typeof value)
+
+    // Update formData
+    const incomes = formData.incomes || []
+    console.log('Current formData.incomes BEFORE update:', JSON.stringify(incomes, null, 2))
+
+    const incomeIndex = incomes.findIndex((inc: any) => inc.type === type)
+    let updatedIncomes = [...incomes]
+
+    if (incomeIndex === -1) {
+      console.log('Creating new income entry for type:', type)
+      updatedIncomes.push({ type, details: { [field]: value } })
+    } else {
+      console.log('Updating existing income entry at index:', incomeIndex)
+      console.log('Existing details BEFORE:', JSON.stringify(incomes[incomeIndex].details, null, 2))
+
+      updatedIncomes[incomeIndex] = {
+        ...incomes[incomeIndex],
+        details: { ...incomes[incomeIndex].details, [field]: value },
+      }
+
+      console.log('Updated details AFTER:', JSON.stringify(updatedIncomes[incomeIndex].details, null, 2))
+    }
+
+    console.log('Final updatedIncomes being sent to handleInputChange:', JSON.stringify(updatedIncomes, null, 2))
+
+    handleInputChange("incomes", updatedIncomes)
+
+    // Update stepDataFromAPI
+    const apiIncomes = [...(stepDataFromAPI || [])]
+    const apiIncomeIndex = apiIncomes.findIndex((inc: any) => inc.type === type)
+
+    if (apiIncomeIndex === -1) {
+      apiIncomes.push({ type, details: { [field]: value } })
+    } else {
+      apiIncomes[apiIncomeIndex] = {
+        ...apiIncomes[apiIncomeIndex],
+        details: { ...apiIncomes[apiIncomeIndex].details, [field]: value },
+      }
+    }
+
+    setStepDataFromAPI(apiIncomes)
+    console.log('Updated stepDataFromAPI:', JSON.stringify(apiIncomes, null, 2))
+    console.log('=== END updateIncomeDetails ENHANCED DEBUG ===')
+  }
+
   const isIncomeSourceCompleted = (sourceId: string) => {
+    const details: any = getIncomeDetails(sourceId)
     switch (sourceId) {
       case "salary":
-        return !!(formData.salaryIncome && formData.employerName)
+        return !!(details?.annualSalary && details?.taxDeducted)
       case "business":
-        return !!(formData.businessIncome && formData.businessType)
+        return !!(details?.businessIncome && details?.businessType)
       case "freelancer":
-        return !!formData.freelancerIncome
+        return !!details?.freelancerIncome
       case "professional":
-        return !!(formData.professionalIncome && formData.profession)
+        return !!(details?.professionalIncome && details?.profession)
       case "pension":
-        return !!formData.pensionIncome
+        return !!details?.pensionIncome
       case "agriculture":
-        return !!formData.agricultureIncome
+        return !!details?.agricultureIncome
       case "commission":
         return !!(
-          formData.lifeInsuranceAmount ||
-          formData.generalInsuranceAmount ||
-          formData.realEstateTravelAmount ||
-          formData.servicesConsultancyAmount ||
-          formData.otherCommissionsAmount
+          details?.lifeInsuranceAmount ||
+          details?.generalInsuranceAmount ||
+          details?.realEstateTravelAmount ||
+          details?.servicesConsultancyAmount ||
+          details?.otherCommissionsAmount
         )
       case "partnership":
-        return !!(formData.partnershipIncome && formData.partnershipName)
+        return !!(details?.partnershipIncome && details?.partnershipName)
       case "property":
         return !!(
-          (formData.propertyRentEntries && formData.propertyRentEntries.length > 0) ||
-          (formData.propertySaleEntries && formData.propertySaleEntries.length > 0)
+          (details.propertyRentEntries && details.propertyRentEntries.length > 0) ||
+          (details.propertySaleEntries && details.propertySaleEntries.length > 0)
         )
       case "savings":
-        return !!formData.savingsIncome
+        return !!details?.savingsIncome
       case "dividend":
-        return !!(formData.dividendIncome || formData.capitalGain)
+        return !!(details?.dividendIncome || details?.capitalGain)
       case "other":
-        return !!(formData.otherIncomeInflows && formData.otherIncomeInflows.length > 0)
+        return !!(details?.otherIncomeInflows && details?.otherIncomeInflows?.length > 0)
       default:
         return false
     }
@@ -104,6 +270,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
   }
 
   const renderIncomeSection = (sourceId: string, title: string) => {
+    const details = getIncomeDetails(sourceId)
+
     switch (sourceId) {
       case "salary":
         return (
@@ -113,29 +281,20 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="salaryIncome">Annual Salary (PKR)</Label>
                 <Input
                   id="salaryIncome"
-                  value={formatCurrency(formData.salaryIncome || "")}
-                  onChange={(e) => handleCurrencyInput("salaryIncome", e.target.value)}
+                  value={formatCurrency(details.annualSalary || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "annualSalary", handleCurrencyInput("annualSalary", e.target.value))}
                   placeholder="Enter annual salary"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="taxDeductedBySalaryEmployer">Tax Deducted by Employer (PKR)</Label>
+                <Label htmlFor="taxDeducted">Tax Deducted by Employer (PKR)</Label>
                 <Input
-                  id="taxDeductedBySalaryEmployer"
-                  value={formatCurrency(formData.taxDeductedBySalaryEmployer || "")}
-                  onChange={(e) => handleCurrencyInput("taxDeductedBySalaryEmployer", e.target.value)}
+                  id="taxDeducted"
+                  value={formatCurrency(details.taxDeducted || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "taxDeducted", handleCurrencyInput("taxDeducted", e.target.value))}
                   placeholder="Enter tax deducted"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="employerName">Employer Name</Label>
-              <Input
-                id="employerName"
-                value={formData.employerName || ""}
-                onChange={(e) => handleInputChange("employerName", e.target.value)}
-                placeholder="Enter employer name"
-              />
             </div>
           </div>
         )
@@ -148,8 +307,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="businessIncome">Annual Business Income (PKR)</Label>
                 <Input
                   id="businessIncome"
-                  value={formatCurrency(formData.businessIncome || "")}
-                  onChange={(e) => handleCurrencyInput("businessIncome", e.target.value)}
+                  value={formatCurrency(details.businessIncome || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "businessIncome", handleCurrencyInput("businessIncome", e.target.value))}
                   placeholder="Enter business income"
                 />
               </div>
@@ -157,8 +316,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="businessExpenses">Business Expenses (PKR)</Label>
                 <Input
                   id="businessExpenses"
-                  value={formatCurrency(formData.businessExpenses || "")}
-                  onChange={(e) => handleCurrencyInput("businessExpenses", e.target.value)}
+                  value={formatCurrency(details.businessExpenses || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "businessExpenses", handleCurrencyInput("businessExpenses", e.target.value))}
                   placeholder="Enter business expenses"
                 />
               </div>
@@ -166,18 +325,19 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
             <div className="space-y-2">
               <Label htmlFor="businessType">Type of Business</Label>
               <Select
-                onValueChange={(value) => handleInputChange("businessType", value)}
-                value={formData.businessType || ""}
+                onValueChange={(value) => updateIncomeDetails(sourceId, "businessType", value)}
+                value={details.businessType || ""}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select business type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="trading">Trading</SelectItem>
-                  <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                  <SelectItem value="services">Services</SelectItem>
-                  <SelectItem value="retail">Retail</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="trader">Trader</SelectItem>
+                  <SelectItem value="manufacturer">Manufacturer</SelectItem>
+                  <SelectItem value="Dealer">Dealer</SelectItem>
+                  <SelectItem value="wholeslaer">Wholesaler</SelectItem>
+                  <SelectItem value="importer">Importer</SelectItem>
+                  <SelectItem value="exporter">Exporter</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -192,8 +352,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="freelancerIncome">Annual Freelance Income (PKR)</Label>
                 <Input
                   id="freelancerIncome"
-                  value={formatCurrency(formData.freelancerIncome || "")}
-                  onChange={(e) => handleCurrencyInput("freelancerIncome", e.target.value)}
+                  value={formatCurrency(details.freelancerIncome || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "freelancerIncome", handleCurrencyInput("freelancerIncome", e.target.value))}
                   placeholder="Enter freelance income"
                 />
               </div>
@@ -201,8 +361,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="freelancerExpenses">Business Expenses (PKR)</Label>
                 <Input
                   id="freelancerExpenses"
-                  value={formatCurrency(formData.freelancerExpenses || "")}
-                  onChange={(e) => handleCurrencyInput("freelancerExpenses", e.target.value)}
+                  value={formatCurrency(details.freelancerExpenses || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "freelancerExpenses", handleCurrencyInput("freelancerExpenses", e.target.value))}
                   placeholder="Enter expenses"
                 />
               </div>
@@ -211,8 +371,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
               <Label htmlFor="freelanceServices">Type of Services</Label>
               <Textarea
                 id="freelanceServices"
-                value={formData.freelanceServices || ""}
-                onChange={(e) => handleInputChange("freelanceServices", e.target.value)}
+                value={details.freelanceServices || ""}
+                onChange={(e) => updateIncomeDetails(sourceId, "freelanceServices", e.target.value)}
                 placeholder="Describe your freelance services"
               />
             </div>
@@ -227,8 +387,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="professionalIncome">Annual Professional Income (PKR)</Label>
                 <Input
                   id="professionalIncome"
-                  value={formatCurrency(formData.professionalIncome || "")}
-                  onChange={(e) => handleCurrencyInput("professionalIncome", e.target.value)}
+                  value={formatCurrency(details.professionalIncome || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "professionalIncome", handleCurrencyInput("professionalIncome", e.target.value))}
                   placeholder="Enter professional income"
                 />
               </div>
@@ -236,8 +396,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="professionalExpenses">Professional Expenses (PKR)</Label>
                 <Input
                   id="professionalExpenses"
-                  value={formatCurrency(formData.professionalExpenses || "")}
-                  onChange={(e) => handleCurrencyInput("professionalExpenses", e.target.value)}
+                  value={formatCurrency(details.professionalExpenses || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "professionalExpenses", handleCurrencyInput("professionalExpenses", e.target.value))}
                   placeholder="Enter expenses"
                 />
               </div>
@@ -245,8 +405,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
             <div className="space-y-2">
               <Label htmlFor="profession">Profession</Label>
               <Select
-                onValueChange={(value) => handleInputChange("profession", value)}
-                value={formData.profession || ""}
+                onValueChange={(value) => updateIncomeDetails(sourceId, "profession", value)}
+                value={details.profession || ""}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select profession" />
@@ -271,8 +431,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
               <Label htmlFor="pensionIncome">Annual Pension Amount (PKR)</Label>
               <Input
                 id="pensionIncome"
-                value={formatCurrency(formData.pensionIncome || "")}
-                onChange={(e) => handleCurrencyInput("pensionIncome", e.target.value)}
+                value={formatCurrency(details.pensionIncome || "")}
+                onChange={(e) => updateIncomeDetails(sourceId, "pensionIncome", handleCurrencyInput("pensionIncome", e.target.value))}
                 placeholder="Enter annual pension amount"
               />
             </div>
@@ -286,8 +446,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
               <Label htmlFor="agricultureIncome">Annual Agriculture Income (PKR)</Label>
               <Input
                 id="agricultureIncome"
-                value={formatCurrency(formData.agricultureIncome || "")}
-                onChange={(e) => handleCurrencyInput("agricultureIncome", e.target.value)}
+                value={formatCurrency(details.agricultureIncome || "")}
+                onChange={(e) => updateIncomeDetails(sourceId, "agricultureIncome", handleCurrencyInput("agricultureIncome", e.target.value))}
                 placeholder="Enter annual agriculture income"
               />
             </div>
@@ -297,7 +457,6 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
       case "commission":
         return (
           <div className="space-y-6">
-            {/* Life Insurance Agent */}
             <div className="border rounded-lg p-4 bg-blue-50/50">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-blue-900">Life Insurance Agent</h4>
@@ -310,8 +469,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="lifeInsuranceAmount">Amount (PKR)</Label>
                   <Input
                     id="lifeInsuranceAmount"
-                    value={formatCurrency(formData.lifeInsuranceAmount || "")}
-                    onChange={(e) => handleCurrencyInput("lifeInsuranceAmount", e.target.value)}
+                    value={formatCurrency(details.lifeInsuranceAmount || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "lifeInsuranceAmount", handleCurrencyInput("lifeInsuranceAmount", e.target.value))}
                     placeholder="Enter amount"
                   />
                 </div>
@@ -319,8 +478,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="lifeInsuranceTaxDeducted">Tax Deducted (PKR)</Label>
                   <Input
                     id="lifeInsuranceTaxDeducted"
-                    value={formatCurrency(formData.lifeInsuranceTaxDeducted || "")}
-                    onChange={(e) => handleCurrencyInput("lifeInsuranceTaxDeducted", e.target.value)}
+                    value={formatCurrency(details.lifeInsuranceTaxDeducted || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "lifeInsuranceTaxDeducted", handleCurrencyInput("lifeInsuranceTaxDeducted", e.target.value))}
                     placeholder="Enter tax deducted"
                   />
                 </div>
@@ -328,15 +487,13 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="lifeInsuranceExpense">Expense (PKR)</Label>
                   <Input
                     id="lifeInsuranceExpense"
-                    value={formatCurrency(formData.lifeInsuranceExpense || "")}
-                    onChange={(e) => handleCurrencyInput("lifeInsuranceExpense", e.target.value)}
+                    value={formatCurrency(details.lifeInsuranceExpense || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "lifeInsuranceExpense", handleCurrencyInput("lifeInsuranceExpense", e.target.value))}
                     placeholder="Enter expense"
                   />
                 </div>
               </div>
             </div>
-
-            {/* Insurance Agent - General/Others */}
             <div className="border rounded-lg p-4 bg-green-50/50">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-green-900">Insurance Agent - General/Others</h4>
@@ -349,8 +506,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="generalInsuranceAmount">Amount (PKR)</Label>
                   <Input
                     id="generalInsuranceAmount"
-                    value={formatCurrency(formData.generalInsuranceAmount || "")}
-                    onChange={(e) => handleCurrencyInput("generalInsuranceAmount", e.target.value)}
+                    value={formatCurrency(details.generalInsuranceAmount || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "generalInsuranceAmount", handleCurrencyInput("generalInsuranceAmount", e.target.value))}
                     placeholder="Enter amount"
                   />
                 </div>
@@ -358,8 +515,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="generalInsuranceTaxDeducted">Tax Deducted (PKR)</Label>
                   <Input
                     id="generalInsuranceTaxDeducted"
-                    value={formatCurrency(formData.generalInsuranceTaxDeducted || "")}
-                    onChange={(e) => handleCurrencyInput("generalInsuranceTaxDeducted", e.target.value)}
+                    value={formatCurrency(details.generalInsuranceTaxDeducted || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "generalInsuranceTaxDeducted", handleCurrencyInput("generalInsuranceTaxDeducted", e.target.value))}
                     placeholder="Enter tax deducted"
                   />
                 </div>
@@ -367,15 +524,13 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="generalInsuranceExpense">Expense (PKR)</Label>
                   <Input
                     id="generalInsuranceExpense"
-                    value={formatCurrency(formData.generalInsuranceExpense || "")}
-                    onChange={(e) => handleCurrencyInput("generalInsuranceExpense", e.target.value)}
+                    value={formatCurrency(details.generalInsuranceExpense || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "generalInsuranceExpense", handleCurrencyInput("generalInsuranceExpense", e.target.value))}
                     placeholder="Enter expense"
                   />
                 </div>
               </div>
             </div>
-
-            {/* Real Estate/Travel Agent */}
             <div className="border rounded-lg p-4 bg-orange-50/50">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-orange-900">Real Estate/Travel Agent</h4>
@@ -388,8 +543,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="realEstateTravelAmount">Amount (PKR)</Label>
                   <Input
                     id="realEstateTravelAmount"
-                    value={formatCurrency(formData.realEstateTravelAmount || "")}
-                    onChange={(e) => handleCurrencyInput("realEstateTravelAmount", e.target.value)}
+                    value={formatCurrency(details.realEstateTravelAmount || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "realEstateTravelAmount", handleCurrencyInput("realEstateTravelAmount", e.target.value))}
                     placeholder="Enter amount"
                   />
                 </div>
@@ -397,8 +552,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="realEstateTravelTaxDeducted">Tax Deducted (PKR)</Label>
                   <Input
                     id="realEstateTravelTaxDeducted"
-                    value={formatCurrency(formData.realEstateTravelTaxDeducted || "")}
-                    onChange={(e) => handleCurrencyInput("realEstateTravelTaxDeducted", e.target.value)}
+                    value={formatCurrency(details.realEstateTravelTaxDeducted || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "realEstateTravelTaxDeducted", handleCurrencyInput("realEstateTravelTaxDeducted", e.target.value))}
                     placeholder="Enter tax deducted"
                   />
                 </div>
@@ -406,15 +561,13 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="realEstateTravelExpense">Expense (PKR)</Label>
                   <Input
                     id="realEstateTravelExpense"
-                    value={formatCurrency(formData.realEstateTravelExpense || "")}
-                    onChange={(e) => handleCurrencyInput("realEstateTravelExpense", e.target.value)}
+                    value={formatCurrency(details.realEstateTravelExpense || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "realEstateTravelExpense", handleCurrencyInput("realEstateTravelExpense", e.target.value))}
                     placeholder="Enter expense"
                   />
                 </div>
               </div>
             </div>
-
-            {/* Services/Consultancy */}
             <div className="border rounded-lg p-4 bg-purple-50/50">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-purple-900">Services/Consultancy</h4>
@@ -427,8 +580,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="servicesConsultancyAmount">Amount (PKR)</Label>
                   <Input
                     id="servicesConsultancyAmount"
-                    value={formatCurrency(formData.servicesConsultancyAmount || "")}
-                    onChange={(e) => handleCurrencyInput("servicesConsultancyAmount", e.target.value)}
+                    value={formatCurrency(details.servicesConsultancyAmount || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "servicesConsultancyAmount", handleCurrencyInput("servicesConsultancyAmount", e.target.value))}
                     placeholder="Enter amount"
                   />
                 </div>
@@ -436,8 +589,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="servicesConsultancyTaxDeducted">Tax Deducted (PKR)</Label>
                   <Input
                     id="servicesConsultancyTaxDeducted"
-                    value={formatCurrency(formData.servicesConsultancyTaxDeducted || "")}
-                    onChange={(e) => handleCurrencyInput("servicesConsultancyTaxDeducted", e.target.value)}
+                    value={formatCurrency(details.servicesConsultancyTaxDeducted || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "servicesConsultancyTaxDeducted", handleCurrencyInput("servicesConsultancyTaxDeducted", e.target.value))}
                     placeholder="Enter tax deducted"
                   />
                 </div>
@@ -445,15 +598,13 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="servicesConsultancyExpense">Expense (PKR)</Label>
                   <Input
                     id="servicesConsultancyExpense"
-                    value={formatCurrency(formData.servicesConsultancyExpense || "")}
-                    onChange={(e) => handleCurrencyInput("servicesConsultancyExpense", e.target.value)}
+                    value={formatCurrency(details.servicesConsultancyExpense || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "servicesConsultancyExpense", handleCurrencyInput("servicesConsultancyExpense", e.target.value))}
                     placeholder="Enter expense"
                   />
                 </div>
               </div>
             </div>
-
-            {/* Other Commissions */}
             <div className="border rounded-lg p-4 bg-gray-50/50">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-gray-900">Other Commissions</h4>
@@ -466,8 +617,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="otherCommissionsAmount">Amount (PKR)</Label>
                   <Input
                     id="otherCommissionsAmount"
-                    value={formatCurrency(formData.otherCommissionsAmount || "")}
-                    onChange={(e) => handleCurrencyInput("otherCommissionsAmount", e.target.value)}
+                    value={formatCurrency(details.otherCommissionsAmount || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "otherCommissionsAmount", handleCurrencyInput("otherCommissionsAmount", e.target.value))}
                     placeholder="Enter amount"
                   />
                 </div>
@@ -475,8 +626,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="otherCommissionsTaxDeducted">Tax Deducted (PKR)</Label>
                   <Input
                     id="otherCommissionsTaxDeducted"
-                    value={formatCurrency(formData.otherCommissionsTaxDeducted || "")}
-                    onChange={(e) => handleCurrencyInput("otherCommissionsTaxDeducted", e.target.value)}
+                    value={formatCurrency(details.otherCommissionsTaxDeducted || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "otherCommissionsTaxDeducted", handleCurrencyInput("otherCommissionsTaxDeducted", e.target.value))}
                     placeholder="Enter tax deducted"
                   />
                 </div>
@@ -484,48 +635,46 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="otherCommissionsExpense">Expense (PKR)</Label>
                   <Input
                     id="otherCommissionsExpense"
-                    value={formatCurrency(formData.otherCommissionsExpense || "")}
-                    onChange={(e) => handleCurrencyInput("otherCommissionsExpense", e.target.value)}
+                    value={formatCurrency(details.otherCommissionsExpense || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "otherCommissionsExpense", handleCurrencyInput("otherCommissionsExpense", e.target.value))}
                     placeholder="Enter expense"
                   />
                 </div>
               </div>
             </div>
-
-            {/* Summary Section */}
             <div className="mt-6 p-4 bg-muted/30 rounded-lg">
               <h4 className="font-medium mb-3">Commission Income Summary</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                 {[
                   {
                     label: "Life Insurance",
-                    amount: formData.lifeInsuranceAmount,
-                    expense: formData.lifeInsuranceExpense,
-                    tax: formData.lifeInsuranceTaxDeducted,
+                    amount: details.lifeInsuranceAmount,
+                    expense: details.lifeInsuranceExpense,
+                    tax: details.lifeInsuranceTaxDeducted,
                   },
                   {
                     label: "General Insurance",
-                    amount: formData.generalInsuranceAmount,
-                    expense: formData.generalInsuranceExpense,
-                    tax: formData.generalInsuranceTaxDeducted,
+                    amount: details.generalInsuranceAmount,
+                    expense: details.generalInsuranceExpense,
+                    tax: details.generalInsuranceTaxDeducted,
                   },
                   {
                     label: "Real Estate/Travel",
-                    amount: formData.realEstateTravelAmount,
-                    expense: formData.realEstateTravelExpense,
-                    tax: formData.realEstateTravelTaxDeducted,
+                    amount: details.realEstateTravelAmount,
+                    expense: details.realEstateTravelExpense,
+                    tax: details.realEstateTravelTaxDeducted,
                   },
                   {
                     label: "Services/Consultancy",
-                    amount: formData.servicesConsultancyAmount,
-                    expense: formData.servicesConsultancyExpense,
-                    tax: formData.servicesConsultancyTaxDeducted,
+                    amount: details.servicesConsultancyAmount,
+                    expense: details.servicesConsultancyExpense,
+                    tax: details.servicesConsultancyTaxDeducted,
                   },
                   {
                     label: "Other Commissions",
-                    amount: formData.otherCommissionsAmount,
-                    expense: formData.otherCommissionsExpense,
-                    tax: formData.otherCommissionsTaxDeducted,
+                    amount: details.otherCommissionsAmount,
+                    expense: details.otherCommissionsExpense,
+                    tax: details.otherCommissionsTaxDeducted,
                   },
                 ].map((item, index) => {
                   const netIncome = Number(item.amount || 0) - Number(item.expense || 0)
@@ -547,12 +696,11 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <span className="font-semibold text-lg">
                     PKR{" "}
                     {[
-                      Number(formData.lifeInsuranceAmount || 0) - Number(formData.lifeInsuranceExpense || 0),
-                      Number(formData.generalInsuranceAmount || 0) - Number(formData.generalInsuranceExpense || 0),
-                      Number(formData.realEstateTravelAmount || 0) - Number(formData.realEstateTravelExpense || 0),
-                      Number(formData.servicesConsultancyAmount || 0) -
-                        Number(formData.servicesConsultancyExpense || 0),
-                      Number(formData.otherCommissionsAmount || 0) - Number(formData.otherCommissionsExpense || 0),
+                      Number(details.lifeInsuranceAmount || 0) - Number(details.lifeInsuranceExpense || 0),
+                      Number(details.generalInsuranceAmount || 0) - Number(details.generalInsuranceExpense || 0),
+                      Number(details.realEstateTravelAmount || 0) - Number(details.realEstateTravelExpense || 0),
+                      Number(details.servicesConsultancyAmount || 0) - Number(details.servicesConsultancyExpense || 0),
+                      Number(details.otherCommissionsAmount || 0) - Number(details.otherCommissionsExpense || 0),
                     ]
                       .reduce((total, income) => total + Math.max(0, income), 0)
                       .toLocaleString()}
@@ -568,11 +716,11 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="partnershipIncome">Annual Partnership Income (PKR)</Label>
+                <Label htmlFor="partnershipIncome">Ann. Partnership Income(PKR)</Label>
                 <Input
                   id="partnershipIncome"
-                  value={formatCurrency(formData.partnershipIncome || "")}
-                  onChange={(e) => handleCurrencyInput("partnershipIncome", e.target.value)}
+                  value={formatCurrency(details.partnershipIncome || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "partnershipIncome", handleCurrencyInput("partnershipIncome", e.target.value))}
                   placeholder="Enter partnership income"
                 />
               </div>
@@ -582,8 +730,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   id="partnershipShare"
                   type="number"
                   max="100"
-                  value={formData.partnershipShare || ""}
-                  onChange={(e) => handleInputChange("partnershipShare", e.target.value)}
+                  value={details.partnershipShare || ""}
+                  onChange={(e) => updateIncomeDetails(sourceId, "partnershipShare", e.target.value)}
                   placeholder="Enter your share percentage"
                 />
               </div>
@@ -592,8 +740,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
               <Label htmlFor="partnershipName">Partnership/AOP Name</Label>
               <Input
                 id="partnershipName"
-                value={formData.partnershipName || ""}
-                onChange={(e) => handleInputChange("partnershipName", e.target.value)}
+                value={details.partnershipName || ""}
+                onChange={(e) => updateIncomeDetails(sourceId, "partnershipName", e.target.value)}
                 placeholder="Enter partnership name"
               />
             </div>
@@ -603,7 +751,6 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
       case "property":
         return (
           <div className="space-y-6">
-            {/* Property Type Selection */}
             <div className="space-y-3">
               <Label className="text-base font-medium">Select Property Income Types</Label>
               <div className="flex flex-wrap gap-4">
@@ -611,18 +758,14 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <input
                     type="checkbox"
                     id="propertyRent"
-                    checked={formData.propertyTypes?.includes("rent") || false}
+                    checked={details.propertyTypes?.includes("rent") || false}
                     onChange={(e) => {
-                      const currentTypes = formData.propertyTypes || []
+                      const currentTypes = details.propertyTypes || []
                       if (e.target.checked) {
-                        handleInputChange("propertyTypes", [...currentTypes, "rent"])
+                        updateIncomeDetails(sourceId, "propertyTypes", [...currentTypes, "rent"])
                       } else {
-                        handleInputChange(
-                          "propertyTypes",
-                          currentTypes.filter((type: string) => type !== "rent"),
-                        )
-                        // Clear related data
-                        handleInputChange("propertyRentEntries", [])
+                        updateIncomeDetails(sourceId, "propertyTypes", currentTypes.filter((type: string) => type !== "rent"))
+                        updateIncomeDetails(sourceId, "propertyRentEntries", [])
                       }
                     }}
                     className="rounded border-gray-300"
@@ -635,18 +778,14 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <input
                     type="checkbox"
                     id="propertySale"
-                    checked={formData.propertyTypes?.includes("sale") || false}
+                    checked={details.propertyTypes?.includes("sale") || false}
                     onChange={(e) => {
-                      const currentTypes = formData.propertyTypes || []
+                      const currentTypes = details.propertyTypes || []
                       if (e.target.checked) {
-                        handleInputChange("propertyTypes", [...currentTypes, "sale"])
+                        updateIncomeDetails(sourceId, "propertyTypes", [...currentTypes, "sale"])
                       } else {
-                        handleInputChange(
-                          "propertyTypes",
-                          currentTypes.filter((type: string) => type !== "sale"),
-                        )
-                        // Clear related data
-                        handleInputChange("propertySaleEntries", [])
+                        updateIncomeDetails(sourceId, "propertyTypes", currentTypes.filter((type: string) => type !== "sale"))
+                        updateIncomeDetails(sourceId, "propertySaleEntries", [])
                       }
                     }}
                     className="rounded border-gray-300"
@@ -657,13 +796,9 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 </div>
               </div>
             </div>
-
-            {/* Property Rent Section */}
-            {formData.propertyTypes?.includes("rent") && (
+            {details.propertyTypes?.includes("rent") && (
               <div className="border rounded-lg p-4 bg-blue-50/50">
                 <h4 className="font-medium mb-4 text-blue-900">Property Rent Income</h4>
-
-                {/* Add New Rent Entry Form */}
                 <div className="border rounded-lg p-4 bg-white mb-4">
                   <h5 className="font-medium mb-3">Add New Rental Property</h5>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -671,8 +806,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                       <Label htmlFor="newRentPropertyAddress">Property Address</Label>
                       <Input
                         id="newRentPropertyAddress"
-                        value={formData.newRentPropertyAddress || ""}
-                        onChange={(e) => handleInputChange("newRentPropertyAddress", e.target.value)}
+                        value={details.newRentPropertyAddress || ""}
+                        onChange={(e) => updateIncomeDetails(sourceId, "newRentPropertyAddress", e.target.value)}
                         placeholder="Enter property address"
                       />
                     </div>
@@ -680,8 +815,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                       <Label htmlFor="newRentAnnualRent">Annual Rent Received (PKR)</Label>
                       <Input
                         id="newRentAnnualRent"
-                        value={formatCurrency(formData.newRentAnnualRent || "")}
-                        onChange={(e) => handleCurrencyInput("newRentAnnualRent", e.target.value)}
+                        value={formatCurrency(details.newRentAnnualRent || "")}
+                        onChange={(e) => updateIncomeDetails(sourceId, "newRentAnnualRent", handleCurrencyInput("newRentAnnualRent", e.target.value))}
                         placeholder="Enter annual rent"
                       />
                     </div>
@@ -689,8 +824,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                       <Label htmlFor="newRentExpenses">Rent Expenses During Year (PKR)</Label>
                       <Input
                         id="newRentExpenses"
-                        value={formatCurrency(formData.newRentExpenses || "")}
-                        onChange={(e) => handleCurrencyInput("newRentExpenses", e.target.value)}
+                        value={formatCurrency(details.newRentExpenses || "")}
+                        onChange={(e) => updateIncomeDetails(sourceId, "newRentExpenses", handleCurrencyInput("newRentExpenses", e.target.value))}
                         placeholder="Enter expenses"
                       />
                     </div>
@@ -698,8 +833,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                       <Label htmlFor="newRentTaxDeducted">Tax Deducted by Tenant (PKR)</Label>
                       <Input
                         id="newRentTaxDeducted"
-                        value={formatCurrency(formData.newRentTaxDeducted || "")}
-                        onChange={(e) => handleCurrencyInput("newRentTaxDeducted", e.target.value)}
+                        value={formatCurrency(details.newRentTaxDeducted || "")}
+                        onChange={(e) => updateIncomeDetails(sourceId, "newRentTaxDeducted", handleCurrencyInput("newRentTaxDeducted", e.target.value))}
                         placeholder="Enter tax deducted (if any)"
                       />
                     </div>
@@ -708,24 +843,23 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                     <Button
                       type="button"
                       onClick={() => {
-                        if (formData.newRentPropertyAddress && formData.newRentAnnualRent) {
+                        if (details.newRentPropertyAddress && details.newRentAnnualRent) {
                           const newRentEntry = {
                             id: Date.now().toString(),
-                            address: formData.newRentPropertyAddress,
-                            annualRent: formData.newRentAnnualRent,
-                            expenses: formData.newRentExpenses || "0",
-                            taxDeducted: formData.newRentTaxDeducted || "0",
+                            address: details.newRentPropertyAddress,
+                            annualRent: details.newRentAnnualRent,
+                            expenses: details.newRentExpenses || "0",
+                            taxDeducted: details.newRentTaxDeducted || "0",
                           }
-                          const currentEntries = formData.propertyRentEntries || []
-                          handleInputChange("propertyRentEntries", [...currentEntries, newRentEntry])
-                          // Clear form
-                          handleInputChange("newRentPropertyAddress", "")
-                          handleInputChange("newRentAnnualRent", "")
-                          handleInputChange("newRentExpenses", "")
-                          handleInputChange("newRentTaxDeducted", "")
+                          const currentEntries = details.propertyRentEntries || []
+                          updateIncomeDetails(sourceId, "propertyRentEntries", [...currentEntries, newRentEntry])
+                          updateIncomeDetails(sourceId, "newRentPropertyAddress", "")
+                          updateIncomeDetails(sourceId, "newRentAnnualRent", "")
+                          updateIncomeDetails(sourceId, "newRentExpenses", "")
+                          updateIncomeDetails(sourceId, "newRentTaxDeducted", "")
                         }
                       }}
-                      disabled={!formData.newRentPropertyAddress || !formData.newRentAnnualRent}
+                      disabled={!details.newRentPropertyAddress || !details.newRentAnnualRent}
                       className="w-full md:w-auto"
                     >
                       <Plus className="w-4 h-4 mr-2" />
@@ -733,13 +867,11 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                     </Button>
                   </div>
                 </div>
-
-                {/* Display Added Rent Entries */}
-                {formData.propertyRentEntries && formData.propertyRentEntries.length > 0 && (
+                {details.propertyRentEntries && details.propertyRentEntries.length > 0 && (
                   <div className="space-y-3">
                     <h5 className="font-medium">Added Rental Properties</h5>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                      {formData.propertyRentEntries.map((entry: any) => (
+                      {details.propertyRentEntries.map((entry: any) => (
                         <div
                           key={entry.id}
                           className="border rounded-lg p-3 bg-white relative group hover:shadow-md transition-shadow"
@@ -750,10 +882,10 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                             size="sm"
                             className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => {
-                              const updatedEntries = formData.propertyRentEntries.filter(
+                              const updatedEntries = details.propertyRentEntries.filter(
                                 (item: any) => item.id !== entry.id,
                               )
-                              handleInputChange("propertyRentEntries", updatedEntries)
+                              updateIncomeDetails(sourceId, "propertyRentEntries", updatedEntries)
                             }}
                           >
                             <X className="w-3 h-3" />
@@ -788,13 +920,9 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 )}
               </div>
             )}
-
-            {/* Property Sale Section */}
-            {formData.propertyTypes?.includes("sale") && (
+            {details.propertyTypes?.includes("sale") && (
               <div className="border rounded-lg p-4 bg-green-50/50">
                 <h4 className="font-medium mb-4 text-green-900">Gain on Sale of Property</h4>
-
-                {/* Add New Sale Entry Form */}
                 <div className="border rounded-lg p-4 bg-white mb-4">
                   <h5 className="font-medium mb-3">Add New Property Sale</h5>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -802,16 +930,16 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                       <Label htmlFor="newSalePropertyAddress">Property Address</Label>
                       <Input
                         id="newSalePropertyAddress"
-                        value={formData.newSalePropertyAddress || ""}
-                        onChange={(e) => handleInputChange("newSalePropertyAddress", e.target.value)}
+                        value={details.newSalePropertyAddress || ""}
+                        onChange={(e) => updateIncomeDetails(sourceId, "newSalePropertyAddress", e.target.value)}
                         placeholder="Enter property address"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="newSalePropertyType">Property Type</Label>
                       <Select
-                        onValueChange={(value) => handleInputChange("newSalePropertyType", value)}
-                        value={formData.newSalePropertyType || ""}
+                        onValueChange={(value) => updateIncomeDetails(sourceId, "newSalePropertyType", value)}
+                        value={details.newSalePropertyType || ""}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select property type" />
@@ -827,8 +955,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                       <Label htmlFor="newSalePurchasePrice">Purchase Price (PKR)</Label>
                       <Input
                         id="newSalePurchasePrice"
-                        value={formatCurrency(formData.newSalePurchasePrice || "")}
-                        onChange={(e) => handleCurrencyInput("newSalePurchasePrice", e.target.value)}
+                        value={formatCurrency(details.newSalePurchasePrice || "")}
+                        onChange={(e) => updateIncomeDetails(sourceId, "newSalePurchasePrice", handleCurrencyInput("newSalePurchasePrice", e.target.value))}
                         placeholder="Enter purchase price"
                       />
                     </div>
@@ -836,19 +964,17 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                       <Label htmlFor="newSaleSalePrice">Sale Price (PKR)</Label>
                       <Input
                         id="newSaleSalePrice"
-                        value={formatCurrency(formData.newSaleSalePrice || "")}
-                        onChange={(e) => handleCurrencyInput("newSaleSalePrice", e.target.value)}
+                        value={formatCurrency(details.newSaleSalePrice || "")}
+                        onChange={(e) => updateIncomeDetails(sourceId, "newSaleSalePrice", handleCurrencyInput("newSaleSalePrice", e.target.value))}
                         placeholder="Enter sale price"
                       />
                     </div>
                   </div>
-
-                  {/* Holding Period Selection */}
-                  {formData.newSalePropertyType && (
+                  {details.newSalePropertyType && (
                     <div className="space-y-3 mb-4">
                       <Label className="text-base font-medium">Holding Period (July 1, 2023 to June 30, 2024)</Label>
                       <div className="space-y-2">
-                        {formData.newSalePropertyType === "open-plot" && (
+                        {details.newSalePropertyType === "open-plot" && (
                           <>
                             {[
                               {
@@ -883,8 +1009,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                                   id={`holding-${option.value}`}
                                   name="newSaleHoldingPeriod"
                                   value={option.value}
-                                  checked={formData.newSaleHoldingPeriod === option.value}
-                                  onChange={(e) => handleInputChange("newSaleHoldingPeriod", e.target.value)}
+                                  checked={details.newSaleHoldingPeriod === option.value}
+                                  onChange={(e) => updateIncomeDetails(sourceId, "newSaleHoldingPeriod", e.target.value)}
                                   className="rounded border-gray-300"
                                 />
                                 <Label htmlFor={`holding-${option.value}`} className="cursor-pointer text-sm">
@@ -894,7 +1020,7 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                             ))}
                           </>
                         )}
-                        {formData.newSalePropertyType === "constructed-plot" && (
+                        {details.newSalePropertyType === "constructed-plot" && (
                           <>
                             {[
                               { value: "not-exceed-1-year", label: "Holding period does not exceed one year" },
@@ -918,8 +1044,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                                   id={`holding-${option.value}`}
                                   name="newSaleHoldingPeriod"
                                   value={option.value}
-                                  checked={formData.newSaleHoldingPeriod === option.value}
-                                  onChange={(e) => handleInputChange("newSaleHoldingPeriod", e.target.value)}
+                                  checked={details.newSaleHoldingPeriod === option.value}
+                                  onChange={(e) => updateIncomeDetails(sourceId, "newSaleHoldingPeriod", e.target.value)}
                                   className="rounded border-gray-300"
                                 />
                                 <Label htmlFor={`holding-${option.value}`} className="cursor-pointer text-sm">
@@ -929,7 +1055,7 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                             ))}
                           </>
                         )}
-                        {formData.newSalePropertyType === "flat" && (
+                        {details.newSalePropertyType === "flat" && (
                           <>
                             {[
                               { value: "not-exceed-1-year", label: "Holding period does not exceed one year" },
@@ -945,8 +1071,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                                   id={`holding-${option.value}`}
                                   name="newSaleHoldingPeriod"
                                   value={option.value}
-                                  checked={formData.newSaleHoldingPeriod === option.value}
-                                  onChange={(e) => handleInputChange("newSaleHoldingPeriod", e.target.value)}
+                                  checked={details.newSaleHoldingPeriod === option.value}
+                                  onChange={(e) => updateIncomeDetails(sourceId, "newSaleHoldingPeriod", e.target.value)}
                                   className="rounded border-gray-300"
                                 />
                                 <Label htmlFor={`holding-${option.value}`} className="cursor-pointer text-sm">
@@ -959,43 +1085,41 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                       </div>
                     </div>
                   )}
-
                   <div className="mt-4">
                     <Button
                       type="button"
                       onClick={() => {
                         if (
-                          formData.newSalePropertyAddress &&
-                          formData.newSalePropertyType &&
-                          formData.newSalePurchasePrice &&
-                          formData.newSaleSalePrice &&
-                          formData.newSaleHoldingPeriod
+                          details.newSalePropertyAddress &&
+                          details.newSalePropertyType &&
+                          details.newSalePurchasePrice &&
+                          details.newSaleSalePrice &&
+                          details.newSaleHoldingPeriod
                         ) {
                           const newSaleEntry = {
                             id: Date.now().toString(),
-                            address: formData.newSalePropertyAddress,
-                            propertyType: formData.newSalePropertyType,
-                            purchasePrice: formData.newSalePurchasePrice,
-                            salePrice: formData.newSaleSalePrice,
-                            holdingPeriod: formData.newSaleHoldingPeriod,
-                            gain: Number(formData.newSaleSalePrice) - Number(formData.newSalePurchasePrice),
+                            address: details.newSalePropertyAddress,
+                            propertyType: details.newSalePropertyType,
+                            purchasePrice: details.newSalePurchasePrice,
+                            salePrice: details.newSaleSalePrice,
+                            holdingPeriod: details.newSaleHoldingPeriod,
+                            gain: Number(details.newSalelaborSaleSalePrice) - Number(details.newSalePurchasePrice),
                           }
-                          const currentEntries = formData.propertySaleEntries || []
-                          handleInputChange("propertySaleEntries", [...currentEntries, newSaleEntry])
-                          // Clear form
-                          handleInputChange("newSalePropertyAddress", "")
-                          handleInputChange("newSalePropertyType", "")
-                          handleInputChange("newSalePurchasePrice", "")
-                          handleInputChange("newSaleSalePrice", "")
-                          handleInputChange("newSaleHoldingPeriod", "")
+                          const currentEntries = details.propertySaleEntries || []
+                          updateIncomeDetails(sourceId, "propertySaleEntries", [...currentEntries, newSaleEntry])
+                          updateIncomeDetails(sourceId, "newSalePropertyAddress", "")
+                          updateIncomeDetails(sourceId, "newSalePropertyType", "")
+                          updateIncomeDetails(sourceId, "newSalePurchasePrice", "")
+                          updateIncomeDetails(sourceId, "newSaleSalePrice", "")
+                          updateIncomeDetails(sourceId, "newSaleHoldingPeriod", "")
                         }
                       }}
                       disabled={
-                        !formData.newSalePropertyAddress ||
-                        !formData.newSalePropertyType ||
-                        !formData.newSalePurchasePrice ||
-                        !formData.newSaleSalePrice ||
-                        !formData.newSaleHoldingPeriod
+                        !details.newSalePropertyAddress ||
+                        !details.newSalePropertyType ||
+                        !details.newSalePurchasePrice ||
+                        !details.newSaleSalePrice ||
+                        !details.newSaleHoldingPeriod
                       }
                       className="w-full md:w-auto"
                     >
@@ -1004,13 +1128,11 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                     </Button>
                   </div>
                 </div>
-
-                {/* Display Added Sale Entries */}
-                {formData.propertySaleEntries && formData.propertySaleEntries.length > 0 && (
+                {details.propertySaleEntries && details.propertySaleEntries.length > 0 && (
                   <div className="space-y-3">
                     <h5 className="font-medium">Added Property Sales</h5>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                      {formData.propertySaleEntries.map((entry: any) => (
+                      {details.propertySaleEntries.map((entry: any) => (
                         <div
                           key={entry.id}
                           className="border rounded-lg p-3 bg-white relative group hover:shadow-md transition-shadow"
@@ -1021,10 +1143,10 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                             size="sm"
                             className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => {
-                              const updatedEntries = formData.propertySaleEntries.filter(
+                              const updatedEntries = details.propertySaleEntries.filter(
                                 (item: any) => item.id !== entry.id,
                               )
-                              handleInputChange("propertySaleEntries", updatedEntries)
+                              updateIncomeDetails(sourceId, "propertySaleEntries", updatedEntries)
                             }}
                           >
                             <X className="w-3 h-3" />
@@ -1078,18 +1200,16 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 )}
               </div>
             )}
-
-            {/* Summary Section */}
-            {(formData.propertyRentEntries?.length > 0 || formData.propertySaleEntries?.length > 0) && (
+            {(details.propertyRentEntries?.length > 0 || details.propertySaleEntries?.length > 0) && (
               <div className="mt-6 p-4 bg-muted/30 rounded-lg">
                 <h4 className="font-medium mb-3">Property Income Summary</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  {formData.propertyRentEntries?.length > 0 && (
+                  {details.propertyRentEntries?.length > 0 && (
                     <div>
                       <span className="text-muted-foreground">Total Rental Income:</span>
                       <div className="font-semibold text-blue-600">
                         PKR{" "}
-                        {formData.propertyRentEntries
+                        {details.propertyRentEntries
                           .reduce(
                             (total: number, entry: any) => total + (Number(entry.annualRent) - Number(entry.expenses)),
                             0,
@@ -1098,12 +1218,12 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                       </div>
                     </div>
                   )}
-                  {formData.propertySaleEntries?.length > 0 && (
+                  {details.propertySaleEntries?.length > 0 && (
                     <div>
                       <span className="text-muted-foreground">Total Capital Gains:</span>
                       <div className="font-semibold text-green-600">
                         PKR{" "}
-                        {formData.propertySaleEntries
+                        {details.propertySaleEntries
                           .reduce((total: number, entry: any) => total + entry.gain, 0)
                           .toLocaleString()}
                       </div>
@@ -1123,8 +1243,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="savingsIncome">Annual Profit on Savings (PKR)</Label>
                 <Input
                   id="savingsIncome"
-                  value={formatCurrency(formData.savingsIncome || "")}
-                  onChange={(e) => handleCurrencyInput("savingsIncome", e.target.value)}
+                  value={formatCurrency(details.savingsIncome || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "savingsIncome", handleCurrencyInput("savingsIncome", e.target.value))}
                   placeholder="Enter profit on savings"
                 />
               </div>
@@ -1132,8 +1252,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="savingsTaxDeducted">Tax Deducted (PKR)</Label>
                 <Input
                   id="savingsTaxDeducted"
-                  value={formatCurrency(formData.savingsTaxDeducted || "")}
-                  onChange={(e) => handleCurrencyInput("savingsTaxDeducted", e.target.value)}
+                  value={formatCurrency(details.savingsTaxDeducted || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "savingsTaxDeducted", handleCurrencyInput("savingsTaxDeducted", e.target.value))}
                   placeholder="Enter tax deducted"
                 />
               </div>
@@ -1141,8 +1261,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
             <div className="space-y-2">
               <Label htmlFor="savingsSource">Source of Savings</Label>
               <Select
-                onValueChange={(value) => handleInputChange("savingsSource", value)}
-                value={formData.savingsSource || ""}
+                onValueChange={(value) => updateIncomeDetails(sourceId, "savingsSource", value)}
+                value={details.savingsSource || ""}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select savings source" />
@@ -1167,8 +1287,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="dividendIncome">Annual Dividend Income (PKR)</Label>
                 <Input
                   id="dividendIncome"
-                  value={formatCurrency(formData.dividendIncome || "")}
-                  onChange={(e) => handleCurrencyInput("dividendIncome", e.target.value)}
+                  value={formatCurrency(details.dividendIncome || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "dividendIncome", handleCurrencyInput("dividendIncome", e.target.value))}
                   placeholder="Enter dividend income"
                 />
               </div>
@@ -1176,8 +1296,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="capitalGain">Capital Gains (PKR)</Label>
                 <Input
                   id="capitalGain"
-                  value={formatCurrency(formData.capitalGain || "")}
-                  onChange={(e) => handleCurrencyInput("capitalGain", e.target.value)}
+                  value={formatCurrency(details.capitalGain || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "capitalGain", handleCurrencyInput("capitalGain", e.target.value))}
                   placeholder="Enter capital gains"
                 />
               </div>
@@ -1187,16 +1307,16 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Label htmlFor="dividendTaxDeducted">Tax Deducted on Dividend (PKR)</Label>
                 <Input
                   id="dividendTaxDeducted"
-                  value={formatCurrency(formData.dividendTaxDeducted || "")}
-                  onChange={(e) => handleCurrencyInput("dividendTaxDeducted", e.target.value)}
+                  value={formatCurrency(details.dividendTaxDeducted || "")}
+                  onChange={(e) => updateIncomeDetails(sourceId, "dividendTaxDeducted", handleCurrencyInput("dividendTaxDeducted", e.target.value))}
                   placeholder="Enter tax deducted"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="investmentType">Type of Investment</Label>
                 <Select
-                  onValueChange={(value) => handleInputChange("investmentType", value)}
-                  value={formData.investmentType || ""}
+                  onValueChange={(value) => updateIncomeDetails(sourceId, "investmentType", value)}
+                  value={details.investmentType || ""}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select investment type" />
@@ -1217,15 +1337,14 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
       case "other":
         return (
           <div className="space-y-4">
-            {/* Add New Inflow Form */}
             <div className="border rounded-lg p-4 bg-muted/50">
               <h4 className="font-medium mb-3">Add New Inflow</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="newInflowType">Inflow Type</Label>
                   <Select
-                    onValueChange={(value) => handleInputChange("newInflowType", value)}
-                    value={formData.newInflowType || ""}
+                    onValueChange={(value) => updateIncomeDetails(sourceId, "newInflowType", value)}
+                    value={details.newInflowType || ""}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select inflow type" />
@@ -1242,8 +1361,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="newInflowAmount">Amount (PKR)</Label>
                   <Input
                     id="newInflowAmount"
-                    value={formatCurrency(formData.newInflowAmount || "")}
-                    onChange={(e) => handleCurrencyInput("newInflowAmount", e.target.value)}
+                    value={formatCurrency(details.newInflowAmount || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "newInflowAmount", handleCurrencyInput("newInflowAmount", e.target.value))}
                     placeholder="Enter amount"
                   />
                 </div>
@@ -1251,8 +1370,8 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   <Label htmlFor="newInflowDescription">Description</Label>
                   <Input
                     id="newInflowDescription"
-                    value={formData.newInflowDescription || ""}
-                    onChange={(e) => handleInputChange("newInflowDescription", e.target.value)}
+                    value={details.newInflowDescription || ""}
+                    onChange={(e) => updateIncomeDetails(sourceId, "newInflowDescription", e.target.value)}
                     placeholder="Enter description"
                   />
                 </div>
@@ -1261,22 +1380,21 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <Button
                   type="button"
                   onClick={() => {
-                    if (formData.newInflowType && formData.newInflowAmount) {
+                    if (details.newInflowType && details.newInflowAmount) {
                       const newInflow = {
                         id: Date.now().toString(),
-                        type: formData.newInflowType,
-                        amount: formData.newInflowAmount,
-                        description: formData.newInflowDescription || "",
+                        type: details.newInflowType,
+                        amount: details.newInflowAmount,
+                        description: details.newInflowDescription || "",
                       }
-                      const currentInflows = formData.otherIncomeInflows || []
-                      handleInputChange("otherIncomeInflows", [...currentInflows, newInflow])
-                      // Clear form
-                      handleInputChange("newInflowType", "")
-                      handleInputChange("newInflowAmount", "")
-                      handleInputChange("newInflowDescription", "")
+                      const currentInflows = details.otherIncomeInflows || []
+                      updateIncomeDetails(sourceId, "otherIncomeInflows", [...currentInflows, newInflow])
+                      updateIncomeDetails(sourceId, "newInflowType", "")
+                      updateIncomeDetails(sourceId, "newInflowAmount", "")
+                      updateIncomeDetails(sourceId, "newInflowDescription", "")
                     }
                   }}
-                  disabled={!formData.newInflowType || !formData.newInflowAmount}
+                  disabled={!details.newInflowType || !details.newInflowAmount}
                   className="w-full md:w-auto"
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -1284,13 +1402,11 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 </Button>
               </div>
             </div>
-
-            {/* Display Added Inflows */}
-            {formData.otherIncomeInflows && formData.otherIncomeInflows.length > 0 && (
+            {details.otherIncomeInflows && details.otherIncomeInflows.length > 0 && (
               <div className="space-y-3">
                 <h4 className="font-medium">Added Inflows</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {formData.otherIncomeInflows.map((inflow: any) => (
+                  {details.otherIncomeInflows.map((inflow: any) => (
                     <div
                       key={inflow.id}
                       className="border rounded-lg p-3 bg-background relative group hover:shadow-md transition-shadow"
@@ -1301,10 +1417,10 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                         size="sm"
                         className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => {
-                          const updatedInflows = formData.otherIncomeInflows.filter(
+                          const updatedInflows = details.otherIncomeInflows.filter(
                             (item: any) => item.id !== inflow.id,
                           )
-                          handleInputChange("otherIncomeInflows", updatedInflows)
+                          updateIncomeDetails(sourceId, "otherIncomeInflows", updatedInflows)
                         }}
                       >
                         <X className="w-3 h-3" />
@@ -1331,7 +1447,7 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                     <span className="font-medium">Total Other Income:</span>
                     <span className="font-semibold">
                       PKR{" "}
-                      {formData.otherIncomeInflows
+                      {details.otherIncomeInflows
                         .reduce((total: number, inflow: any) => total + Number(inflow.amount || 0), 0)
                         .toLocaleString()}
                     </span>
@@ -1339,9 +1455,7 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 </div>
               </div>
             )}
-
-            {/* Empty State */}
-            {(!formData.otherIncomeInflows || formData.otherIncomeInflows.length === 0) && (
+            {(!details.otherIncomeInflows || details.otherIncomeInflows.length === 0) && (
               <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
                 <div className="space-y-2">
                   <div className="text-sm">No inflows added yet</div>
@@ -1367,7 +1481,6 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
 
   return (
     <div className="flex gap-6">
-      {/* Left Sidebar - Income Sources Navigation */}
       <div className="w-80 flex-shrink-0">
         <Card className="sticky top-4">
           <CardHeader>
@@ -1385,25 +1498,23 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
               return (
                 <div
                   key={sourceId}
-                  className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
-                    isCurrent
-                      ? "border-[#af0e0e] bg-[#af0e0e]/5"
-                      : isCompleted
-                        ? "border-green-500 bg-green-50 hover:bg-green-100"
-                        : "border-gray-200 bg-gray-50 hover:bg-gray-100"
-                  }`}
+                  className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${isCurrent
+                    ? "border-[#af0e0e] bg-[#af0e0e]/5"
+                    : isCompleted
+                      ? "border-green-500 bg-green-50 hover:bg-green-100"
+                      : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+                    }`}
                   onClick={() => handleIncomeNavigation(index)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                          isCurrent
-                            ? "bg-[#af0e0e] text-white"
-                            : isCompleted
-                              ? "bg-green-500 text-white"
-                              : "bg-gray-300 text-gray-600"
-                        }`}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${isCurrent
+                          ? "bg-[#af0e0e] text-white"
+                          : isCompleted
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-300 text-gray-600"
+                          }`}
                       >
                         {isCompleted && !isCurrent ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
                       </div>
@@ -1417,13 +1528,11 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 </div>
               )
             })}
-
-            {/* Progress Summary */}
             <div className="mt-4 pt-4 border-t">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Progress:</span>
                 <span className="font-medium">
-                  {selectedIncomeSources.filter((sourceId) => isIncomeSourceCompleted(sourceId)).length} of{" "}
+                  {selectedIncomeSources.filter((sourceId: string) => isIncomeSourceCompleted(sourceId)).length} of{" "}
                   {selectedIncomeSources.length} completed
                 </span>
               </div>
@@ -1431,11 +1540,10 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 <div
                   className="bg-[#af0e0e] h-2 rounded-full transition-all duration-300"
                   style={{
-                    width: `${
-                      (selectedIncomeSources.filter((sourceId) => isIncomeSourceCompleted(sourceId)).length /
-                        selectedIncomeSources.length) *
+                    width: `${(selectedIncomeSources.filter((sourceId: string) => isIncomeSourceCompleted(sourceId)).length /
+                      selectedIncomeSources.length) *
                       100
-                    }%`,
+                      }%`,
                   }}
                 />
               </div>
@@ -1443,8 +1551,6 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
           </CardContent>
         </Card>
       </div>
-
-      {/* Right Content - Current Income Source Form */}
       <div className="flex-1">
         <Card>
           <CardHeader>
@@ -1460,8 +1566,6 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
           </CardHeader>
           <CardContent>
             {renderIncomeSection(currentSourceId, currentSourceTitle)}
-
-            {/* Navigation Buttons */}
             <div className="mt-8 flex justify-between">
               <Button
                 variant="outline"

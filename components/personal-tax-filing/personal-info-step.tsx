@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -12,6 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
+import { TaxFilingService } from "@/services/taxFiling.service"
+import { useParams } from "next/navigation"
 
 interface PersonalInfoStepProps {
   formData: any
@@ -20,6 +22,36 @@ interface PersonalInfoStepProps {
 
 export function PersonalInfoStep({ formData, handleInputChange }: PersonalInfoStepProps) {
   const [cnicError, setCnicError] = useState("")
+  const params = useParams()
+  const filingId = params.id as string
+  const [personalInfo, setPersonalInfo] = useState<any>({})
+  const [loading, setIsLoading] = useState(true)
+
+  const stepData = async () => {
+    try {
+      const ts = new TaxFilingService();
+      const res = await ts.getStep(filingId, '1');
+      const fetchedPersonalInfo = res.personalInfo || {};
+      setPersonalInfo(fetchedPersonalInfo);
+
+      // Set default values from personalInfo if they exist and formData is empty
+      Object.keys(fetchedPersonalInfo).forEach(key => {
+        if (fetchedPersonalInfo[key] && !formData[key]) {
+          handleInputChange(key, fetchedPersonalInfo[key]);
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching step data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (filingId) {
+      stepData();
+    }
+  }, [])
 
   const formatCnic = (value: string) => {
     const numericValue = value.replace(/\D/g, "")
@@ -47,6 +79,15 @@ export function PersonalInfoStep({ formData, handleInputChange }: PersonalInfoSt
     } else {
       setCnicError("")
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Loading Personal Information...</h2>
+        <p className="text-sm text-muted-foreground">Please wait while we fetch your personal information.</p>
+      </div>
+    );
   }
 
   return (
@@ -77,7 +118,7 @@ export function PersonalInfoStep({ formData, handleInputChange }: PersonalInfoSt
         <Label htmlFor="fullName">Full Name</Label>
         <Input
           id="fullName"
-          value={formData.fullName}
+          value={formData.fullName || personalInfo.fullName || ""}
           onChange={(e) => handleInputChange("fullName", e.target.value)}
           placeholder="Enter your full name"
         />
@@ -87,7 +128,7 @@ export function PersonalInfoStep({ formData, handleInputChange }: PersonalInfoSt
         <Input
           id="email"
           type="email"
-          value={formData.email}
+          value={formData.email || personalInfo.email || ""}
           onChange={(e) => handleInputChange("email", e.target.value)}
           placeholder="Enter your email"
         />
@@ -96,7 +137,7 @@ export function PersonalInfoStep({ formData, handleInputChange }: PersonalInfoSt
         <Label htmlFor="cnic">CNIC Number</Label>
         <Input
           id="cnic"
-          value={formData.cnic}
+          value={formData.cnic || personalInfo.cnic || ""}
           onChange={handleCnicChange}
           placeholder="xxxxx-xxxxxxx-x"
           maxLength={15}
@@ -109,13 +150,16 @@ export function PersonalInfoStep({ formData, handleInputChange }: PersonalInfoSt
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full justify-start text-left font-normal">
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {formData.dateOfBirth ? format(formData.dateOfBirth, "PPP") : <span>Pick a date</span>}
+              {(formData.dateOfBirth || personalInfo.dateOfBirth) ?
+                format(formData.dateOfBirth || personalInfo.dateOfBirth, "PPP") :
+                <span>Pick a date</span>
+              }
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0">
             <Calendar
               mode="single"
-              selected={formData.dateOfBirth || undefined}
+              selected={formData.dateOfBirth || personalInfo.dateOfBirth || undefined}
               onSelect={(date) => handleInputChange("dateOfBirth", date)}
               initialFocus
               className="calendar-custom"
@@ -125,7 +169,10 @@ export function PersonalInfoStep({ formData, handleInputChange }: PersonalInfoSt
       </div>
       <div className="space-y-2">
         <Label htmlFor="nationality">Nationality</Label>
-        <Select onValueChange={(value) => handleInputChange("nationality", value)} value={formData.nationality}>
+        <Select
+          onValueChange={(value) => handleInputChange("nationality", value)}
+          value={formData.nationality || personalInfo.nationality || ""}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select nationality" />
           </SelectTrigger>
@@ -139,7 +186,7 @@ export function PersonalInfoStep({ formData, handleInputChange }: PersonalInfoSt
         <Label htmlFor="residentialStatus">Residential Status</Label>
         <Select
           onValueChange={(value) => handleInputChange("residentialStatus", value)}
-          value={formData.residentialStatus}
+          value={formData.residentialStatus || personalInfo.residentialStatus || ""}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select residential status" />
@@ -150,12 +197,12 @@ export function PersonalInfoStep({ formData, handleInputChange }: PersonalInfoSt
           </SelectContent>
         </Select>
       </div>
-      {formData.nationality === "Other" && (
+      {(formData.nationality || personalInfo.nationality) === "Other" && (
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
             <Checkbox
               id="stayMoreThan3Years"
-              checked={formData.stayMoreThan3Years}
+              checked={formData.stayMoreThan3Years ?? personalInfo.stayMoreThan3Years ?? false}
               onCheckedChange={(checked) => handleInputChange("stayMoreThan3Years", checked)}
             />
             <Label htmlFor="stayMoreThan3Years">Stay in Pakistan more than 3 years</Label>
@@ -163,7 +210,7 @@ export function PersonalInfoStep({ formData, handleInputChange }: PersonalInfoSt
           <div className="flex items-center space-x-2">
             <Checkbox
               id="employmentBasedStay"
-              checked={formData.employmentBasedStay}
+              checked={formData.employmentBasedStay ?? personalInfo.employmentBasedStay ?? false}
               onCheckedChange={(checked) => handleInputChange("employmentBasedStay", checked)}
             />
             <Label htmlFor="employmentBasedStay">Stay in Pakistan based on employment</Label>

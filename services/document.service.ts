@@ -5,7 +5,7 @@ import { BaseService } from "./base.service";
 
 export interface CreateDocumentDto {
   name: string;
-  type: 'NTN' | 'TaxReturn' | 'SalarySlip' | 'CNIC' | 'Other';
+  type: string;
   fileUrl: string;
 }
 
@@ -16,7 +16,7 @@ export interface UpdateStatusDto {
 
 export interface UpdateDocumentDto {
   name?: string;
-  type?: 'NTN' | 'TaxReturn' | 'SalarySlip' | 'CNIC' | 'Other';
+  type?: string;
 }
 
 // Define interface for the document data structure
@@ -27,6 +27,7 @@ export interface IDocument {
   fileUrl: string;
   user: string;
   status: string;
+  gstRegistration: string;
   notes?: string;
   reviewedAt?: string;
   reviewedBy?: string;
