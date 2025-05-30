@@ -39,6 +39,7 @@ export class BaseService {
 
   protected async get<T>(url: string, config?: InternalAxiosRequestConfig): Promise<T> {
     const fullUrl = this.baseURL + url; // Construct full URL for each request
+    console.log(fullUrl)
     const response = await this.client.get<T>(fullUrl, config);
     return response.data;
   }

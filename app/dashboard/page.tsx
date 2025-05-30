@@ -14,26 +14,95 @@ import {
   Receipt,
   DollarSign,
   Calculator,
+  MailQuestion,
+  Video,
+  BookOpenText,
 } from "lucide-react"
+import { getCurrentUser } from "@/lib/auth"
+import { ITaxFiling, TaxFilingService } from "@/services/taxFiling.service"
+
+interface INumbers {
+  completed: number,
+  active: number,
+  pending: number,
+  total: number
+}
 
 export default function Dashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const [taxFiling, setTaxFiling] = useState<ITaxFiling[]>([])
+  const [numbers, setNumbers] = useState<INumbers>({
+    completed: 0,
+    active: 0,
+    pending: 0,
+    total: 0
+  })
+
 
   useEffect(() => {
     // For development - bypass authentication and use mock user
-    const mockUser = {
-      id: "1",
-      name: "John Doe",
-      email: "john.doe@example.com",
-      role: "user",
-      phone: "+1234567890",
+    const cookieData = getCurrentUser()
+    setUser(cookieData);
+    const fetchTaxFilings = async () => {
+      try {
+        console.log(user)
+        const ts = new TaxFilingService();
+        const res = await ts.getByUser(cookieData.id);
+        setTaxFiling(res);
+        generateNumbers(res)
+      } catch (e) {
+        console.log(e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchTaxFilings();
+  }, [router])
+
+  const generateNumbers = (filings: ITaxFiling[]) => {
+    if (!filings || filings.length === 0) {
+      setNumbers({
+        completed: 0,
+        active: 0,
+        pending: 0,
+        total: 0
+      });
+      return;
     }
 
-    setUser(mockUser)
-    setLoading(false)
-  }, [router])
+    const counts = filings.reduce((acc, filing) => {
+      const status = filing.status?.toLowerCase();
+
+      switch (status) {
+        case 'completed':
+        case 'approved':
+        case 'submitted':
+          acc.completed++;
+          break;
+        case 'active':
+        case 'under_review':
+        case 'processing':
+          acc.active++;
+          break;
+        case 'pending':
+        case 'draft':
+        case 'review':
+          acc.pending++;
+          break;
+        default:
+          acc.pending++;
+          break;
+      }
+      return acc;
+    }, { completed: 0, active: 0, pending: 0 });
+
+    setNumbers({
+      ...counts,
+      total: filings.length
+    });
+  }
 
   const services = [
     {
@@ -43,13 +112,13 @@ export default function Dashboard() {
       href: "/user-services/personal-tax-filing",
       color: "bg-green-500",
     },
-    {
-      title: "Family Tax Filing",
-      description: "File tax returns for family members",
-      icon: Users,
-      href: "/services/family-tax-filing",
-      color: "bg-purple-500",
-    },
+    // {
+    //   title: "Family Tax Filing",
+    //   description: "File tax returns for family members",
+    //   icon: Users,
+    //   href: "/services/family-tax-filing",
+    //   color: "bg-purple-500",
+    // },
     {
       title: "NTN Registration",
       description: "Register for National Tax Number",
@@ -57,20 +126,20 @@ export default function Dashboard() {
       href: "/user-services/ntn-registration",
       color: "bg-orange-500",
     },
-    {
-      title: "IRIS Profile Update",
-      description: "Update your IRIS profile information",
-      icon: UserCheck,
-      href: "/services/iris-profile-update",
-      color: "bg-cyan-500",
-    },
-    {
-      title: "Business Incorporation",
-      description: "Register and incorporate your business",
-      icon: Building,
-      href: "/services/business-incorporation",
-      color: "bg-indigo-500",
-    },
+    // {
+    //   title: "IRIS Profile Update",
+    //   description: "Update your IRIS profile information",
+    //   icon: UserCheck,
+    //   href: "/services/iris-profile-update",
+    //   color: "bg-cyan-500",
+    // },
+    // {
+    //   title: "Business Incorporation",
+    //   description: "Register and incorporate your business",
+    //   icon: Building,
+    //   href: "/services/business-incorporation",
+    //   color: "bg-indigo-500",
+    // },
     {
       title: "GST Registration",
       description: "Register for Goods and Services Tax",
@@ -92,6 +161,27 @@ export default function Dashboard() {
       href: "/user-services/salary-tax-calculator",
       color: "bg-red-500",
     },
+    {
+      title: "FAQs",
+      description: "View frquently asked questions",
+      icon: MailQuestion,
+      href: "/user-services/faqs",
+      color: "bg-blue-500",
+    },
+    {
+      title: "Videos",
+      description: "View videos realted to tax filing and ntn registration",
+      icon: Video,
+      href: "/user-services/videos",
+      color: "bg-red-500",
+    },
+    {
+      title: "Blogs & Updates",
+      description: "View all blogs and updates related to taxfiling and our app",
+      icon: BookOpenText,
+      href: "/user-services/blogs-and-updates",
+      color: "bg-red-500",
+    }
   ]
 
   const handleServiceClick = (href: string) => {
@@ -123,26 +213,26 @@ export default function Dashboard() {
       <div className="mt-12 mb-12 grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="text-center">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-[#af0e0e]">5</div>
+            <div className="text-2xl font-bold text-[#af0e0e]">{numbers.active}</div>
             <p className="text-sm text-muted-foreground">Active Filings</p>
           </CardContent>
         </Card>
         <Card className="text-center">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">12</div>
+            <div className="text-2xl font-bold text-green-600">{numbers.completed}</div>
             <p className="text-sm text-muted-foreground">Completed</p>
           </CardContent>
         </Card>
         <Card className="text-center">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-orange-600">3</div>
+            <div className="text-2xl font-bold text-orange-600">{numbers.pending}</div>
             <p className="text-sm text-muted-foreground">Pending</p>
           </CardContent>
         </Card>
         <Card className="text-center">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-blue-600">₨ 45,000</div>
-            <p className="text-sm text-muted-foreground">Total Saved</p>
+            <div className="text-2xl font-bold text-blue-600">{numbers.total}</div>
+            <p className="text-sm text-muted-foreground">Total Filings</p>
           </CardContent>
         </Card>
       </div>

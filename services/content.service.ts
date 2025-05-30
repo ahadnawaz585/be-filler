@@ -1,10 +1,26 @@
 import { axiosInstance } from "@/lib/ApiClient";
 import { BaseService } from "./base.service";
-//importing from the server file 
-import { CreateContentDto, UpdateContentDto } from "../../Server/src/modules/content/dto/content.dto";
 
+export type ContentType = 'faq' | 'blog' | 'video';
+
+export interface CreateContentDto {
+  type: ContentType;
+  title: string;
+  data: any;
+  tags?: string[];
+  published?: boolean;
+  createdBy: string;
+}
+
+export interface UpdateContentDto {
+  title?: string;
+  data?: any;
+  tags?: string[];
+  published?: boolean;
+  updatedBy: string;
+}
 // Define interface for the content data structure
-interface Content {
+export interface Content {
   id: string;
   title: string;
   body: string;
@@ -20,18 +36,19 @@ interface ContentQueryParams {
 
 export class ContentService extends BaseService {
   constructor() {
-    super(axiosInstance, "/api/v1/content");
+    super(axiosInstance, "/api/v1/secure/content");
   }
 
   // Get all content with optional query filters
-  async getAllContent(query?: ContentQueryParams): Promise<Content[]> {
+  async getAllContent(query?: ContentQueryParams): Promise<Content> {
+    console.log(1)
     const queryString = query
       ? `?${Object.entries(query)
-          .filter(([_, value]) => value !== undefined)
-          .map(([key, value]) => `${key}=${encodeURIComponent(value as string)}`)
-          .join("&")}`
+        .filter(([_, value]) => value !== undefined)
+        .map(([key, value]) => `${key}=${encodeURIComponent(value as string)}`)
+        .join("&")}`
       : "";
-    return this.get<Content[]>(`/${queryString}`);
+    return this.get<Content>(`/${queryString}`);
   }
 
   // Get content by ID

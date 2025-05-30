@@ -20,7 +20,7 @@ const handleError = (error: any): Promise<never> => {
     (error.response.status === 401 || error.response.statusText === "Unauthorized")
   ) {
     auth.clearToken();
-    window.location.href = "/auth/login";
+    // window.location.href = "/auth/login";
   }
 
   console.error("An error occurred:", error);
