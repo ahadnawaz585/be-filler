@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import NewTaxFilingModal from "@/components/personal-tax-filing/new-tax-filing-modal";
 import { useRouter } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 
 const TaxFilingsPage = () => {
     const [filings, setFilings] = useState<ITaxFiling[]>([]);
@@ -34,13 +35,9 @@ const TaxFilingsPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
+    const currentUser = getCurrentUser();
 
     const taxFilingService = new TaxFilingService();
-
-    // Get current user ID
-    const getCurrentUserId = () => {
-        return localStorage.getItem("userId") || "current-user-id";
-    };
 
     useEffect(() => {
         fetchFilings();
@@ -49,8 +46,10 @@ const TaxFilingsPage = () => {
     const fetchFilings = async () => {
         try {
             setLoading(true);
-            const userId = getCurrentUserId();
+            const userId = currentUser.id;
+            console.log(currentUser.id)
             const data = await taxFilingService.getByUser(userId);
+            console.log(data)
             setFilings(data);
         } catch (error) {
             console.error("Error fetching tax filings:", error);

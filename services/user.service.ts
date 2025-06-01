@@ -1,6 +1,11 @@
 import { axiosInstance } from "@/lib/ApiClient"; // Adjust path to ApiClient.ts
 import { BaseService } from "./base.service";// Adjust path to BaseService.ts
 
+
+export interface Relation {
+  userId: string;
+  relation: string;
+}
 export interface IUser {
   _id: string;
   fullName: string;
@@ -13,6 +18,7 @@ export interface IUser {
   role: 'user' | 'accountant' | 'admin';
   status: 'pending' | 'approved' | 'rejected';
   documents: string[];
+  relations: Relation[];
   serviceCharges?: string[];
   preferences?: object;
   lastLogin?: Date;
@@ -38,7 +44,10 @@ export class UserServices extends BaseService {
   async createUser(userData: Partial<IUser>): Promise<IUser> {
     return this.post<IUser>("/no-otp", userData);
   }
-
+  async updateRelations(id: string, relation: Relation): Promise<IUser> {
+    console.log(relation)
+    return await this.put<IUser>(`/${id}/relations`, relation)
+  }
   async updateUserRole(id: string, role: string): Promise<void> {
     return this.put<void>(`/${id}`, { role });
   }
@@ -51,6 +60,7 @@ export class UserServices extends BaseService {
   }
 
   async getById(id: string): Promise<IUser> {
+    console.log(id)
     return this.get<IUser>(`/${id}`);
   }
   // // Update an order

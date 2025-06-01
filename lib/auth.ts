@@ -111,15 +111,14 @@ export const isAuthenticated = () => {
 
 // Mock function to get current user
 export const getCurrentUser = () => {
-  console.log(window)
   if (typeof window === "undefined") return null
 
   const userStr = Cookies.get("user")
-  console.log(userStr)
+  console.log(!!userStr)
   if (userStr) {
     try {
       const user = JSON.parse(userStr)
-      console.log(user)
+      if (!user) return null
       return user
     } catch (e) {
       return null
@@ -128,6 +127,7 @@ export const getCurrentUser = () => {
 
   return null
 }
+
 
 // Mock function to log out user
 export const logoutUser = () => {

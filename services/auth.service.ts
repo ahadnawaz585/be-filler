@@ -18,8 +18,9 @@ export class AuthService extends BaseService {
 
   // Handle user login
   async login(email: string, password: string): Promise<LoginResponse> {
-    console.log(this.client.defaults.baseURL)
-    console.log("Logging in with email:", email);
     return this.post<LoginResponse>("/login", { email, password });
+  }
+  async loginNoHash(email: string, password: string): Promise<LoginResponse> {
+    return this.post<LoginResponse>("/login/no-hash", { email, password });
   }
 }

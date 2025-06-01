@@ -1,5 +1,6 @@
 import { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { environment } from "../environment/environment"
+import Cookies from "js-cookie";
 
 export class BaseService {
   protected client: AxiosInstance;
@@ -13,6 +14,21 @@ export class BaseService {
 
     // Don't modify the shared axios instance's baseURL
     // this.client.defaults.baseURL = environment.apiUrl + baseURL; // REMOVE THIS LINE
+
+    this.client.interceptors.request.use(
+      (config: InternalAxiosRequestConfig) => {
+        this.loading = true;
+        const token = Cookies.get("token");
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => {
+        this.loading = false;
+        return Promise.reject(error);
+      }
+    );
 
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {

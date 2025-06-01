@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
 import { ITaxFiling, TaxFilingService } from "@/services/taxFiling.service"
+import Cookies from "js-cookie"
 
 interface INumbers {
   completed: number,
@@ -41,9 +42,15 @@ export default function Dashboard() {
   })
 
 
+
   useEffect(() => {
     // For development - bypass authentication and use mock user
     const cookieData = getCurrentUser()
+    if (!cookieData) {
+      // Cookies.remove('user')
+      // Cookies.remove('token')
+      // router.push('/auth/login')
+    }
     setUser(cookieData);
     const fetchTaxFilings = async () => {
       try {
@@ -112,13 +119,13 @@ export default function Dashboard() {
       href: "/user-services/personal-tax-filing",
       color: "bg-green-500",
     },
-    // {
-    //   title: "Family Tax Filing",
-    //   description: "File tax returns for family members",
-    //   icon: Users,
-    //   href: "/services/family-tax-filing",
-    //   color: "bg-purple-500",
-    // },
+    {
+      title: "Family Tax Filing",
+      description: "File tax returns for family members",
+      icon: Users,
+      href: "/user-services/family-tax-filing",
+      color: "bg-purple-500",
+    },
     {
       title: "NTN Registration",
       description: "Register for National Tax Number",
@@ -126,20 +133,20 @@ export default function Dashboard() {
       href: "/user-services/ntn-registration",
       color: "bg-orange-500",
     },
-    // {
-    //   title: "IRIS Profile Update",
-    //   description: "Update your IRIS profile information",
-    //   icon: UserCheck,
-    //   href: "/services/iris-profile-update",
-    //   color: "bg-cyan-500",
-    // },
-    // {
-    //   title: "Business Incorporation",
-    //   description: "Register and incorporate your business",
-    //   icon: Building,
-    //   href: "/services/business-incorporation",
-    //   color: "bg-indigo-500",
-    // },
+    {
+      title: "IRIS Profile Update",
+      description: "Update your IRIS profile information",
+      icon: UserCheck,
+      href: "/user-services/iris-profile",
+      color: "bg-cyan-500",
+    },
+    {
+      title: "Business Incorporation",
+      description: "Register and incorporate your business",
+      icon: Building,
+      href: "/user-services/business-incorporation",
+      color: "bg-indigo-500",
+    },
     {
       title: "GST Registration",
       description: "Register for Goods and Services Tax",

@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from "react"
@@ -10,6 +9,16 @@ import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/ui/mode-toggle"
 import { cn } from "@/lib/utils"
 import Cookies from "js-cookie"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { IUser, UserServices } from "@/services/user.service"
+import { AuthService } from "@/services/auth.service"
+import { toast } from "../ui/use-toast"
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -18,34 +27,65 @@ const Header = () => {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [user, setUser] = useState<IUser | null>(null)
+  const [otherAccounts, setOtherAccounts] = useState<IUser[] | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const checkAuth = () => {
-      console.log("Checking auth...");
-      const user = Cookies.get("user")
-      const token = Cookies.get("token")
-      console.log("Cookies - user:", user, "token:", token);
-      if (user && token) {
-        try {
-          const parsedUser = JSON.parse(user)
-          if (parsedUser.role) {
-            setIsLoggedIn(true)
-            setUserRole(parsedUser.role)
-            console.log("Logged in, role:", parsedUser.role);
-          } else {
-            console.log("Invalid user data: no role");
-            setIsLoggedIn(false)
-            setUserRole(null)
+    const checkAuthAndFetchData = async () => {
+      setLoading(true)
+      try {
+        console.log("Checking auth...")
+        const userCookie = Cookies.get("user")
+        const token = Cookies.get("token")
+        console.log("Cookies - user:", userCookie, "token:", token)
+
+        if (userCookie && token) {
+          try {
+            const parsedUser = JSON.parse(userCookie) as IUser
+            if (parsedUser.role) {
+              setIsLoggedIn(true)
+              setUserRole(parsedUser.role)
+              setUser(parsedUser)
+              console.log("Logged in, role:", parsedUser.role)
+
+              // Fetch other accounts only if user is set
+              const us = new UserServices()
+              const userData = await us.getById(parsedUser.id)
+              // Only update user if userData has a role, otherwise keep parsedUser
+              if (userData.role) {
+                setUser(userData)
+              }
+
+              if (userData.relations && userData.relations.length > 0) {
+                const otherUsers = await Promise.all(
+                  userData.relations.map(async (relation: any) => {
+                    const relationId = relation.userId || relation._id || relation.id
+                    return await us.getById(relationId)
+                  })
+                )
+                setOtherAccounts(otherUsers)
+                console.log("Other accounts:", otherUsers)
+              }
+            } else {
+              console.log("Invalid user data: no role")
+              // handleLogOut()
+            }
+          } catch (parseError) {
+            console.error("Error parsing user cookie:", parseError)
+            // handleLogOut()
           }
-        } catch (error) {
-          console.error("Error parsing user cookie:", error);
+        } else {
+          console.log("Not logged in: missing user or token")
           setIsLoggedIn(false)
           setUserRole(null)
+          setUser(null)
         }
-      } else {
-        console.log("Not logged in: missing user or token");
-        setIsLoggedIn(false)
-        setUserRole(null)
+      } catch (error) {
+        console.error("Error in auth or fetch:", error)
+        // handleLogOut()
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -53,7 +93,7 @@ const Header = () => {
       setIsScrolled(window.scrollY > 20)
     }
 
-    checkAuth()
+    checkAuthAndFetchData()
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
@@ -62,21 +102,50 @@ const Header = () => {
     setIsMenuOpen(!isMenuOpen)
   }
 
+  const handleChangeAcc = async (email: string, password: string) => {
+    const as = new AuthService()
+    const result = await as.loginNoHash(email, password)
+    if (result.token) {
+      toast({
+        title: "Switched Dashboard",
+        description: "Welcome to dashboard...",
+        variant: "default",
+      })
+      Cookies.set("token", result.token, { sameSite: "Strict" })
+      Cookies.set("user", JSON.stringify(result.user), { sameSite: "Strict" })
+
+      // Update local state
+      setIsLoggedIn(true)
+      setUserRole(result.user.role)
+      setUser(result.user)
+      setIsMenuOpen(false)
+      location.reload();
+    } else {
+      toast({
+        title: "Login Failed",
+        description: "Invalid email or password",
+        variant: "destructive",
+      })
+    }
+    router.push('/dashboard')
+  }
+
   const handleLogOut = () => {
-    console.log("Logging out...");
     Cookies.remove("user", { path: "/" })
     Cookies.remove("token", { path: "/" })
     setIsLoggedIn(false)
     setUserRole(null)
+    setUser(null)
+    setOtherAccounts(null)
     setIsMenuOpen(false)
-    // Re-check auth to ensure state is updated
-    const user = Cookies.get("user")
+
+    const userCookie = Cookies.get("user")
     const token = Cookies.get("token")
-    console.log("After logout - user:", user, "token:", token);
-    if (!user && !token) {
-      console.log("Cookies cleared successfully");
+    console.log("After logout - user:", userCookie, "token:", token)
+    if (!userCookie && !token) {
+      console.log("Cookies cleared successfully")
     } else {
-      console.warn("Cookies not cleared properly");
+      console.warn("Cookies not cleared properly")
     }
     router.push("/")
   }
@@ -109,7 +178,33 @@ const Header = () => {
     accountant: [{ name: "Accounts", path: "/dashboard/accountant" }],
   }
 
-  console.log("Rendering Header - isLoggedIn:", isLoggedIn, "userRole:", userRole);
+  // Don't render anything while loading
+  if (loading) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-background border-b shadow-sm">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center">
+                <Image
+                  src="https://www.befiler.com/dashboard/assets/images/logo.png"
+                  alt="Befiler Logo"
+                  width={120}
+                  height={40}
+                  priority
+                  className="h-10 w-auto"
+                />
+              </Link>
+            </div>
+            <div className="flex items-center space-x-4">
+              <ModeToggle />
+              <div className="animate-pulse bg-gray-300 rounded-full h-10 w-10"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+    )
+  }
 
   return (
     <header
@@ -195,28 +290,72 @@ const Header = () => {
               </React.Fragment>
             ))}
 
-            {isLoggedIn &&
-              userRole &&
-              loggedInLinks[userRole as keyof typeof loggedInLinks]?.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.path}
-                  className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-accent",
-                    pathname === link.path ? "text-primary" : "text-foreground",
-                  )}
-                >
-                  {link.name}
-                </Link>
-              ))}
+            {/* Dashboard Links for Logged in Users */}
+            {isLoggedIn && userRole && loggedInLinks[userRole as keyof typeof loggedInLinks] && (
+              <>
+                {loggedInLinks[userRole as keyof typeof loggedInLinks].map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.path}
+                    className={cn(
+                      "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-accent",
+                      pathname === link.path ? "text-primary" : "text-foreground",
+                    )}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+              </>
+            )}
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
             <ModeToggle />
-            {isLoggedIn ? (
-              <Button variant="outline" onClick={handleLogOut}>
-                Log Out
-              </Button>
+            {isLoggedIn && user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary">
+                    <AvatarImage src={user?.image || "https://via.placeholder.com/40"} alt="User Avatar" />
+                    <AvatarFallback className="bg-red-500 text-white text-lg">
+                      {user?.fullName?.[0]?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-2 bg-background shadow-lg rounded-lg border">
+                  <div className="p-2 border-b border-border">
+                    <p className="font-medium">{user.fullName}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                  </div>
+
+                  {otherAccounts && otherAccounts.length > 0 && (
+                    <>
+                      <div className="p-2">
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Switch Account</p>
+                        {otherAccounts.map((o: IUser, idx) => (
+                          <DropdownMenuItem
+                            key={o._id}
+                            className="p-2 hover:bg-accent rounded-md text-sm flex justify-between items-center cursor-pointer"
+                            onClick={() => handleChangeAcc(o.email, o.password || "")}
+                          >
+                            <span>{o.fullName}</span>
+                            <span className="text-muted-foreground text-xs">
+                              {user?.relations?.[idx]?.relation || "N/A"}
+                            </span>
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  <DropdownMenuItem
+                    onClick={handleLogOut}
+                    className="p-2 hover:bg-accent rounded-md text-sm text-red-600 mt-2 cursor-pointer"
+                  >
+                    Log Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <>
                 <Link href="/auth/login">
@@ -313,31 +452,59 @@ const Header = () => {
               </React.Fragment>
             ))}
 
-            {isLoggedIn &&
-              userRole &&
-              loggedInLinks[userRole as keyof typeof loggedInLinks]?.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.path}
-                  className={cn(
-                    "block px-3 py-2 text-base font-medium rounded-md hover:bg-accent",
-                    pathname === link.path ? "text-primary" : "text-foreground",
-                  )}
-                  onClick={toggleMenu}
-                >
-                  {link.name}
-                </Link>
-              ))}
+            {/* Mobile Dashboard Links */}
+            {isLoggedIn && userRole && loggedInLinks[userRole as keyof typeof loggedInLinks] && (
+              <>
+                {loggedInLinks[userRole as keyof typeof loggedInLinks].map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.path}
+                    className={cn(
+                      "block px-3 py-2 text-base font-medium rounded-md hover:bg-accent",
+                      pathname === link.path ? "text-primary" : "text-foreground",
+                    )}
+                    onClick={toggleMenu}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+              </>
+            )}
 
             <div className="pt-4 pb-3 border-t border-border">
-              {isLoggedIn ? (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleLogOut}
-                >
-                  Log Out
-                </Button>
+              {isLoggedIn && user ? (
+                <div className="space-y-2">
+                  <div className="px-3 py-2">
+                    <p className="font-medium">{user.fullName}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                  </div>
+
+                  {otherAccounts && otherAccounts.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="px-3 text-sm font-medium text-muted-foreground">Switch Account</p>
+                      {otherAccounts.map((o: IUser, idx) => (
+                        <button
+                          key={o._id}
+                          className="w-full px-3 py-2 text-left hover:bg-accent rounded-md flex justify-between items-center"
+                          onClick={() => handleChangeAcc(o.email, o.password || "")}
+                        >
+                          <span>{o.fullName}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {user?.relations?.[idx]?.relation || "N/A"}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleLogOut}
+                    className="w-full px-3 py-2 text-left text-red-600 hover:bg-accent rounded-md"
+                  >
+                    Log Out
+                  </button>
+                </div>
               ) : (
                 <div className="flex flex-col space-y-2">
                   <Link href="/auth/login" className="w-full" onClick={toggleMenu}>

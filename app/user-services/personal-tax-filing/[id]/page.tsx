@@ -564,91 +564,99 @@ export default function PersonalTaxFiling() {
       <div className="mb-8">
         {/* Desktop Stepper */}
         <div className="hidden lg:block">
-          <div className="flex items-center justify-between relative">
-            {steps.map((step, index) => (
-              <div key={step.id} className="flex-1 flex flex-col items-center relative">
-                <div
-                  className={`w-10 h-10 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300 z-10 ${step.id === currentStep
-                    ? "bg-[#af0e0e] text-white border-2 border-[#af0e0e]"
-                    : validateStep(step.id)
-                      ? "bg-green-500 text-white border-2 border-green-500 hover:bg-green-600"
-                      : "bg-gray-200 text-gray-500 border-2 border-gray-200 hover:bg-gray-300"
-                    }`}
-                  onClick={() => handleStepChange(step.id)}
-                >
-                  {validateStep(step.id) && step.id !== currentStep ? <CheckCircle2 className="h-5 w-5" /> : step.id}
-                </div>
-                <span
-                  className={`mt-2 text-sm font-medium text-center ${step.id === currentStep
-                    ? "text-[#af0e0e]"
-                    : validateStep(step.id)
-                      ? "text-green-800"
-                      : "text-gray-500"
-                    }`}
-                >
-                  {step.title}
-                </span>
-                {index < steps.length - 1 && (
+          <div className="relative">
+            <div className="flex items-center justify-between">
+              {steps.map((step, index) => (
+                <div key={step.id} className="flex flex-col items-center relative z-10">
                   <div
-                    className={`absolute top-5 h-0.5 ${validateStep(step.id) ? "bg-green-500" : "bg-gray-200"}`}
-                    style={{
-                      left: "50%",
-                      right: `calc(-100% + 50%)`,
-                      width: `calc(100vw / ${steps.length} - 40px)`,
-                      marginLeft: "20px",
-                    }}
-                  />
-                )}
-              </div>
-            ))}
+                    className={`w-10 h-10 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300 ${step.id === currentStep
+                      ? "bg-[#af0e0e] text-white border-2 border-[#af0e0e]"
+                      : validateStep(step.id)
+                        ? "bg-green-500 text-white border-2 border-green-500 hover:bg-green-600"
+                        : "bg-gray-200 text-gray-500 border-2 border-gray-200 hover:bg-gray-300"
+                      }`}
+                    onClick={() => handleStepChange(step.id)}
+                  >
+                    {validateStep(step.id) && step.id !== currentStep ? (
+                      <CheckCircle2 className="h-5 w-5" />
+                    ) : (
+                      step.id
+                    )}
+                  </div>
+                  <span
+                    className={`mt-2 text-sm font-medium text-center ${step.id === currentStep
+                      ? "text-[#af0e0e]"
+                      : validateStep(step.id)
+                        ? "text-green-800"
+                        : "text-gray-500"
+                      }`}
+                  >
+                    {step.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* Progress Line */}
+            <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 -z-10">
+              <div
+                className="h-full bg-green-500 transition-all duration-300"
+                style={{
+                  width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+                }}
+              />
+            </div>
           </div>
         </div>
 
         {/* Tablet Stepper */}
         <div className="hidden md:block lg:hidden">
-          <div className="flex items-center justify-between relative">
-            {steps.map((step, index) => (
-              <div key={step.id} className="flex-1 flex flex-col items-center relative">
-                <div
-                  className={`w-8 h-8 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300 text-xs z-10 ${step.id === currentStep
-                    ? "bg-[#af0e0e] text-white border-2 border-[#af0e0e]"
-                    : validateStep(step.id)
-                      ? "bg-green-500 text-white border-2 border-green-500 hover:bg-green-600"
-                      : "bg-gray-200 text-gray-500 border-2 border-gray-200 hover:bg-gray-300"
-                    }`}
-                  onClick={() => handleStepChange(step.id)}
-                >
-                  {validateStep(step.id) && step.id !== currentStep ? <CheckCircle2 className="h-4 w-4" /> : step.id}
-                </div>
-                <span
-                  className={`mt-1 text-xs font-medium text-center ${step.id === currentStep
-                    ? "text-[#af0e0e]"
-                    : validateStep(step.id)
-                      ? "text-green-800"
-                      : "text-gray-500"
-                    }`}
-                >
-                  {step.shortTitle}
-                </span>
-                {index < steps.length - 1 && (
+          <div className="relative">
+            <div className="flex items-center justify-between">
+              {steps.map((step, index) => (
+                <div key={step.id} className="flex flex-col items-center relative z-10">
                   <div
-                    className={`absolute top-4 h-0.5 ${validateStep(step.id) ? "bg-green-500" : "bg-gray-200"}`}
-                    style={{
-                      left: "50%",
-                      right: `calc(-100% + 50%)`,
-                      width: `calc(100vw / ${steps.length} - 32px)`,
-                      marginLeft: "16px",
-                    }}
-                  />
-                )}
-              </div>
-            ))}
+                    className={`w-8 h-8 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300 text-xs ${step.id === currentStep
+                      ? "bg-[#af0e0e] text-white border-2 border-[#af0e0e]"
+                      : validateStep(step.id)
+                        ? "bg-green-500 text-white border-2 border-green-500 hover:bg-green-600"
+                        : "bg-gray-200 text-gray-500 border-2 border-gray-200 hover:bg-gray-300"
+                      }`}
+                    onClick={() => handleStepChange(step.id)}
+                  >
+                    {validateStep(step.id) && step.id !== currentStep ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : (
+                      step.id
+                    )}
+                  </div>
+                  <span
+                    className={`mt-1 text-xs font-medium text-center ${step.id === currentStep
+                      ? "text-[#af0e0e]"
+                      : validateStep(step.id)
+                        ? "text-green-800"
+                        : "text-gray-500"
+                      }`}
+                  >
+                    {step.shortTitle}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* Progress Line */}
+            <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200 -z-10">
+              <div
+                className="h-full bg-green-500 transition-all duration-300"
+                style={{
+                  width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+                }}
+              />
+            </div>
           </div>
         </div>
 
         {/* Mobile Stepper - Horizontal Scroll */}
         <div className="block md:hidden">
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide px-2">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center flex-shrink-0">
                 <div className="flex flex-col items-center">
@@ -661,7 +669,11 @@ export default function PersonalTaxFiling() {
                       }`}
                     onClick={() => handleStepChange(step.id)}
                   >
-                    {validateStep(step.id) && step.id !== currentStep ? <CheckCircle2 className="h-4 w-4" /> : step.id}
+                    {validateStep(step.id) && step.id !== currentStep ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : (
+                      step.id
+                    )}
                   </div>
                   <span
                     className={`mt-1 text-xs font-medium text-center whitespace-nowrap ${step.id === currentStep
@@ -676,7 +688,8 @@ export default function PersonalTaxFiling() {
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`w-8 h-0.5 mx-1 mt-[-16px] ${validateStep(step.id) ? "bg-green-500" : "bg-gray-200"}`}
+                    className={`w-8 h-0.5 mx-2 ${validateStep(step.id) ? "bg-green-500" : "bg-gray-200"
+                      }`}
                   />
                 )}
               </div>
