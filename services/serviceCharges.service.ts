@@ -2,7 +2,7 @@ import { axiosInstance } from "@/lib/ApiClient";
 import { BaseService } from "./base.service";
 
 // Interface for individual service within a category
-interface Service {
+export interface Service {
   _id?: string;
   name: string;
   fee: string;
@@ -12,7 +12,7 @@ interface Service {
 }
 
 // Interface for the service charge data structure
-interface ServiceCharge {
+export interface ServiceCharge {
   _id?: string;
   category: string;
   services: Service[];

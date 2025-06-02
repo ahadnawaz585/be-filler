@@ -293,7 +293,7 @@ export class TaxFilingService extends BaseService {
   // Get tax filings for a specific user
   async getByUser(userId: string): Promise<ITaxFiling[]> {
     console.log("Fetching tax filings for user ID:", userId);
-    return this.get<ITaxFiling[]>(`/my?userId=${userId}`);
+    return this.get<ITaxFiling[]>(`/my`);
   }
 
   // Get all tax filings
