@@ -39,7 +39,7 @@ export default function ServiceChargesManagement() {
     const [deleting, setDeleting] = useState(false)
 
     const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    if (user.role !== 'admin') {
         return <Unauthorized />
     }
 
@@ -98,11 +98,11 @@ export default function ServiceChargesManagement() {
     }, [searchQuery, selectedCategory, serviceCharges])
 
     const handleAddServiceCharge = () => {
-        router.push("/accountant/service-charges/add")
+        router.push("/admin/service-charges/add")
     }
 
     const handleEditServiceCharge = (category: string) => {
-        router.push(`/accountant/service-charges/${encodeURIComponent(category)}`)
+        router.push(`/admin/service-charges/${encodeURIComponent(category)}`)
     }
 
     const handleDeleteServiceCharge = async () => {

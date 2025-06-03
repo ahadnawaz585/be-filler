@@ -16,6 +16,8 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { DocumentService, IDocument, UpdateStatusDto } from "@/services/document.service"
+import { getCurrentUser } from "@/lib/auth"
+import Unauthorized from "@/components/Unauthorized"
 
 export default function DocumentManagement() {
     const router = useRouter()
@@ -30,6 +32,10 @@ export default function DocumentManagement() {
     })
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
+    const user = getCurrentUser();
+    if (user.role !== 'accountant') {
+        return <Unauthorized />
+    }
 
     useEffect(() => {
         const fetchDocuments = async () => {

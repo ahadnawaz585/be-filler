@@ -18,12 +18,14 @@ import {
   MailQuestion,
   Video,
   BookOpenText,
+  ReceiptCent,
 } from "lucide-react"
 import { getCurrentUser } from "@/lib/auth"
 import { ITaxFiling, TaxFilingService } from "@/services/taxFiling.service"
 import Cookies from "js-cookie"
 import { ServiceChargesService } from "@/services/serviceCharges.service"
 import { DocumentService } from "@/services/document.service"
+import Unauthorized from "@/components/Unauthorized"
 
 interface INumbers {
   documents: number,
@@ -40,6 +42,10 @@ export default function Dashboard() {
     serviceCharges: 0,
     taxFilings: 0
   })
+  const userRed = getCurrentUser();
+  if (userRed.role !== 'accountant') {
+    return <Unauthorized />
+  }
 
   useEffect(() => {
     const cookieData = getCurrentUser()
@@ -103,6 +109,13 @@ export default function Dashboard() {
       href: "/accountant/tax-filing",
       color: "bg-red-500",
     },
+    {
+      title: "Reports Generator",
+      description: "Generate document reports of users.",
+      icon: BookOpenText,
+      href: "/accountant/reports",
+      color: "bg-yellow-500",
+    }
   ]
 
   const handleServiceClick = (href: string) => {

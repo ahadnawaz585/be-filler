@@ -34,7 +34,7 @@ export default function TaxFilingManagement() {
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
     const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    if (user.role !== 'admin') {
         return <Unauthorized />
     }
 
@@ -95,7 +95,7 @@ export default function TaxFilingManagement() {
     }
 
     const handleViewFiling = (filingId: string) => {
-        router.push(`/accountant/tax-filing/${filingId}`)
+        router.push(`/admin/tax-filing/${filingId}`)
     }
 
     const handleStatusChange = async (filingId: string, newStatus: UpdateFilingStatusDto['status']) => {

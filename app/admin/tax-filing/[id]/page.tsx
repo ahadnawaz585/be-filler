@@ -69,7 +69,7 @@ export default function TaxFilingDetails() {
     const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
 
     const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    if (user.role !== 'admin') {
         return <Unauthorized />
     }
 
@@ -761,7 +761,7 @@ export default function TaxFilingDetails() {
                     <div className="flex justify-end">
                         <Button
                             variant="outline"
-                            onClick={() => router.push("/accountant/tax-filing")}
+                            onClick={() => router.push("/admin/tax-filing")}
                             className="text-[#af0e0e] border-[#af0e0e] hover:bg-[#af0e0e] hover:text-white transition-all duration-200 hover:scale-105"
                         >
                             Back to Filings

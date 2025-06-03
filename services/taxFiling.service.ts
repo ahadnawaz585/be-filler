@@ -337,6 +337,9 @@ export class TaxFilingService extends BaseService {
   async getById(id: string): Promise<ITaxFiling> {
     return this.get<ITaxFiling>(`/${id}`);
   }
+  async getByUserId(userId: string): Promise<ITaxFiling[]> {
+    return this.get<ITaxFiling[]>(`/user/${userId}`);
+  }
 
   // Update tax filing status
   async updateStatus(id: string, data: UpdateFilingStatusDto): Promise<ITaxFiling> {

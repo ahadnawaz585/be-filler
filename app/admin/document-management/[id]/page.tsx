@@ -24,8 +24,9 @@ export default function DocumentDetail() {
     const { toast } = useToast()
     const [document, setDocument] = useState<IDocument | null>(null)
     const [loading, setLoading] = useState(true)
+
     const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    if (user.role !== 'admin') {
         return <Unauthorized />
     }
 
