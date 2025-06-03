@@ -32,8 +32,8 @@ export default function DocumentManagement() {
     })
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
-    const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    const user:any = getCurrentUser();
+    if (user?.role !== 'accountant') {
         return <Unauthorized />
     }
 

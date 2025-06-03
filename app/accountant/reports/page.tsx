@@ -1,81 +1,99 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Search, ChevronLeft, ChevronRight } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
-import { IUser, UserServices } from "@/services/user.service"
-import { getCurrentUser } from "@/lib/auth"
-import Unauthorized from "@/components/Unauthorized"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { IUser, UserServices } from "@/services/user.service";
+import { getCurrentUser } from "@/lib/auth";
+import Unauthorized from "@/components/Unauthorized";
 
 export default function DocumentReports() {
-    const router = useRouter()
-    const { toast } = useToast()
-    const [users, setUsers] = useState<IUser[]>([])
-    const [filteredUsers, setFilteredUsers] = useState<IUser[]>([])
-    const [loading, setLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState("")
-    const [currentPage, setCurrentPage] = useState(1)
-    const itemsPerPage = 10
-    const user = getCurrentUser();
-    if (user.role !== 'accountant') {
-        return <Unauthorized />
-    }
+    const router = useRouter();
+    const { toast } = useToast();
+    const [users, setUsers] = useState<IUser[]>([]);
+    const [filteredUsers, setFilteredUsers] = useState<IUser[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+    const itemsPerPage = 10;
+
+    // Check user authorization on client-side mount
+    useEffect(() => {
+        const user = getCurrentUser();
+        if (!user || user.role !== 'accountant') {
+            setIsAuthorized(false);
+        } else {
+            setIsAuthorized(true);
+        }
+    }, []);
+
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const service = new UserServices()
-                const userData = await service.getAllUsers()
-                setUsers(userData)
-                setFilteredUsers(userData)
+                const service = new UserServices();
+                const userData = await service.getAllUsers();
+                setUsers(userData);
+                setFilteredUsers(userData);
             } catch (e) {
                 toast({
                     variant: "destructive",
                     title: "Error",
                     description: "Failed to fetch users. Please try again.",
-                })
+                });
             } finally {
-                setLoading(false)
+                setLoading(false);
             }
+        };
+        if (isAuthorized) {
+            fetchUsers();
         }
-        fetchUsers()
-    }, [toast])
+    }, [isAuthorized, toast]);
 
     useEffect(() => {
-        let result = users
+        let result = users;
 
         // Apply search
         if (searchQuery) {
-            const query = searchQuery.toLowerCase()
+            const query = searchQuery.toLowerCase();
             result = result.filter(
                 (user) =>
                     user.fullName.toLowerCase().includes(query) ||
                     user.email.toLowerCase().includes(query)
-            )
+            );
         }
 
-        setFilteredUsers(result)
-        setCurrentPage(1) // Reset to first page on search change
-    }, [searchQuery, users])
+        setFilteredUsers(result);
+        setCurrentPage(1); // Reset to first page on search change
+    }, [searchQuery, users]);
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(e.target.value)
-    }
+        setSearchQuery(e.target.value);
+    };
 
     const handleViewReports = (userId: string) => {
-        router.push(`/accountant/reports/${userId}`)
-    }
+        router.push(`/accountant/reports/${userId}`);
+    };
 
     // Pagination
-    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
     const paginatedUsers = filteredUsers.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
-    )
+    );
+
+    if (isAuthorized === false) {
+        return <Unauthorized />;
+    }
+
+    if (isAuthorized === null) {
+        return null; // Or a loading spinner while authorization is being checked
+    }
 
     return (
         <div className="container px-4 mx-auto py-8 mt-16">
@@ -192,5 +210,5 @@ export default function DocumentReports() {
                 </CardContent>
             </Card>
         </div>
-    )
+    );
 }

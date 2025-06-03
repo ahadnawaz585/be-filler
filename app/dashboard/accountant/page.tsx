@@ -191,7 +191,7 @@ export default function Dashboard() {
                   variant="outline"
                   className="w-full group-hover:bg-[#af0e0e] group-hover:text-white group-hover:border-[#af0e0e] transition-colors"
                 >
-                  View ->
+                  View : 
                 </Button>
               </CardContent>
             </Card>

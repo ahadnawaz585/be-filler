@@ -40,8 +40,8 @@ export default function AddServiceCharge() {
         category: "",
         services: [{ name: "", fee: "", completionTime: "", requirements: "", contactMethods: "" }],
     })
-    const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    const user:any = getCurrentUser();
+    if (user?.role !== 'accountant') {
         return <Unauthorized />
     }
 

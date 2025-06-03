@@ -110,7 +110,7 @@ export const isAuthenticated = () => {
 }
 
 // Mock function to get current user
-export const getCurrentUser = () => {
+export const getCurrentUser:any = () => {
   if (typeof window === "undefined") return null
 
   const userStr = Cookies.get("user")

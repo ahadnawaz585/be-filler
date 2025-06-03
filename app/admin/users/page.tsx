@@ -24,8 +24,8 @@ export default function UsersTable() {
     const [loading, setLoading] = useState(true)
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
-    const userRed = getCurrentUser();
-    if (userRed.role !== 'admin') {
+    const userRed:any = getCurrentUser();
+    if (userRed?.role !== 'admin') {
         return <Unauthorized />
     }
     // Fetch all users
@@ -56,7 +56,7 @@ export default function UsersTable() {
         try {
             const us = new UserServices()
             await us.updateUserRole(userId, newRole)
-            setUsers(users.map((user) =>
+            setUsers(users.map((user:any) =>
                 user._id === userId ? { ...user, role: newRole } : user
             ))
             toast({
@@ -78,7 +78,7 @@ export default function UsersTable() {
         try {
             const us = new UserServices()
             await us.updateStatus(userId, newStatus)
-            setUsers(users.map((user) =>
+            setUsers(users.map((user:any) =>
                 user._id === userId ? { ...user, status: newStatus } : user
             ))
             toast({

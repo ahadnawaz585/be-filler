@@ -41,8 +41,8 @@ export default function AddServiceCharge() {
         services: [{ name: "", fee: "", completionTime: "", requirements: "", contactMethods: "" }],
     })
 
-    const user = getCurrentUser();
-    if (user.role !== 'admin') {
+    const user:any = getCurrentUser();
+    if (user?.role !== 'admin') {
         return <Unauthorized />
     }
 

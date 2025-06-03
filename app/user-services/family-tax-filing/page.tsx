@@ -91,7 +91,7 @@ const FamilyTaxFiling = () => {
 
                 setTimeout(() => {
                     const user: any = result.user;
-                    if (user.role === "admin") {
+                    if (user?.role === "admin") {
                         window.location.href = "/dashboard/admin";
                     } else if (user.role === "accountant") {
                         window.location.href = "/dashboard/accountant";
