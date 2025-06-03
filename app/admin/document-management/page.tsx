@@ -15,76 +15,72 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
 import { Search, ChevronLeft, ChevronRight } from "lucide-react"
-import { TaxFilingService, ITaxFiling, UpdateFilingStatusDto } from "@/services/taxFiling.service"
+import { DocumentService, IDocument, UpdateStatusDto } from "@/services/document.service"
 import { getCurrentUser } from "@/lib/auth"
 import Unauthorized from "@/components/Unauthorized"
 
-export default function TaxFilingManagement() {
+export default function DocumentManagement() {
     const router = useRouter()
     const { toast } = useToast()
-    const [taxFilings, setTaxFilings] = useState<ITaxFiling[]>([])
-    const [filteredFilings, setFilteredFilings] = useState<ITaxFiling[]>([])
+    const [documents, setDocuments] = useState<IDocument[]>([])
+    const [filteredDocuments, setFilteredDocuments] = useState<IDocument[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [filters, setFilters] = useState({
-        taxYear: "",
-        filingType: "",
+        type: "",
         status: "",
     })
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
     const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    if (user.role !== 'admin') {
         return <Unauthorized />
     }
 
     useEffect(() => {
-        const fetchTaxFilings = async () => {
+        const fetchDocuments = async () => {
             try {
-                const service = new TaxFilingService()
-                const filings = await service.getAll()
-                setTaxFilings(filings)
-                setFilteredFilings(filings)
+                const service = new DocumentService()
+                const docs = await service.getAll()
+                setDocuments(docs)
+                setFilteredDocuments(docs)
             } catch (e) {
                 toast({
                     variant: "destructive",
                     title: "Error",
-                    description: "Failed to fetch tax filings. Please try again.",
+                    description: "Failed to fetch documents. Please try again.",
                 })
             } finally {
                 setLoading(false)
             }
         }
-        fetchTaxFilings()
+        fetchDocuments()
     }, [toast])
 
     useEffect(() => {
-        let result = taxFilings
+        let result = documents
 
         // Apply search
         if (searchQuery) {
             const query = searchQuery.toLowerCase()
             result = result.filter(
-                (filing) =>
-                    filing.personalInfo?.fullName.toLowerCase().includes(query) ||
-                    filing.personalInfo?.cnic.toLowerCase().includes(query)
+                (doc) =>
+                    doc.name.toLowerCase().includes(query) ||
+                    doc.gstRegistration.toLowerCase().includes(query)
             )
         }
 
         // Apply filters
-        if (filters.taxYear && filters.taxYear !== "all") {
-            result = result.filter((filing) => filing.taxYear.toString() === filters.taxYear)
-        }
-        if (filters.filingType && filters.filingType !== "all") {
-            result = result.filter((filing) => filing.filingType === filters.filingType)
+        if (filters.type && filters.type !== "all") {
+            result = result.filter((doc) => doc.type === filters.type)
         }
         if (filters.status && filters.status !== "all") {
-            result = result.filter((filing) => filing.status === filters.status)
+            result = result.filter((doc) => doc.status === filters.status)
         }
 
-        setFilteredFilings(result)
+        setFilteredDocuments(result)
         setCurrentPage(1) // Reset to first page on filter change
-    }, [searchQuery, filters, taxFilings])
+    }, [searchQuery, filters, documents])
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value)
@@ -94,116 +90,98 @@ export default function TaxFilingManagement() {
         setFilters((prev) => ({ ...prev, [key]: value }))
     }
 
-    const handleViewFiling = (filingId: string) => {
-        router.push(`/accountant/tax-filing/${filingId}`)
+    const handleViewDocument = (documentId: string) => {
+        router.push(`/admin/document-management/${documentId}`)
     }
 
-    const handleStatusChange = async (filingId: string, newStatus: UpdateFilingStatusDto['status']) => {
+    const handleStatusChange = async (documentId: string, newStatus: UpdateStatusDto['status'], notes?: string) => {
         try {
-            const service = new TaxFilingService()
-            const updateData: UpdateFilingStatusDto = { status: newStatus }
-            const updatedFiling = await service.updateStatus(filingId, updateData)
+            const service = new DocumentService()
+            const updateData: UpdateStatusDto = { status: newStatus, notes }
+            const updatedDocument = await service.updateStatus(documentId, newStatus, notes)
 
             // Update local state
-            setTaxFilings(prev =>
-                prev.map(filing =>
-                    filing._id === filingId ? { ...filing, status: updatedFiling.status } : filing
+            setDocuments(prev =>
+                prev.map(doc =>
+                    doc.id === documentId ? { ...doc, status: updatedDocument.status, notes: updatedDocument.notes } : doc
                 )
             )
 
             toast({
                 title: "Success",
-                description: "Tax filing status updated successfully",
+                description: "Document status updated successfully",
             })
         } catch (e) {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Failed to update tax filing status. Please try again.",
+                description: "Failed to update document status. Please try again.",
             })
         }
     }
 
     // Pagination
-    const totalPages = Math.ceil(filteredFilings.length / itemsPerPage)
-    const paginatedFilings = filteredFilings.slice(
+    const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage)
+    const paginatedDocuments = filteredDocuments.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     )
 
-    const taxYears = Array.from(
-        new Set(taxFilings.map((filing) => filing.taxYear))
-    ).sort((a, b) => b - a)
+    const documentTypes = Array.from(
+        new Set(documents.map((doc) => doc.type))
+    ).sort()
 
     return (
         <div className="container px-4 mx-auto py-8 mt-16">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight">Tax Filing Management</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Document Management</h1>
                 <p className="text-muted-foreground text-sm mt-1">
-                    View and manage tax filings
+                    View and manage documents
                 </p>
             </div>
 
             <Card className="w-full border shadow-sm">
                 <CardHeader className="bg-gray-50">
-                    <CardTitle className="text-xl">Tax Filings</CardTitle>
+                    <CardTitle className="text-xl">Documents</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
                     {/* Search and Filters */}
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
                         <div className="flex-1">
                             <Label htmlFor="search" className="text-sm font-medium">
-                                Search by Name or CNIC
+                                Search by Name or GST Registration
                             </Label>
                             <div className="relative mt-1">
                                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     id="search"
-                                    placeholder="Enter name or CNIC"
+                                    placeholder="Enter name or GST registration"
                                     value={searchQuery}
                                     onChange={handleSearch}
                                     className="pl-8"
-                                    aria-label="Search tax filings"
+                                    aria-label="Search documents"
                                 />
                             </div>
                         </div>
                         <div className="flex gap-4">
                             <div>
-                                <Label htmlFor="taxYear" className="text-sm font-medium">
-                                    Tax Year
+                                <Label htmlFor="type" className="text-sm font-medium">
+                                    Document Type
                                 </Label>
                                 <Select
-                                    value={filters.taxYear}
-                                    onValueChange={(value) => handleFilterChange("taxYear", value)}
+                                    value={filters.type}
+                                    onValueChange={(value) => handleFilterChange("type", value)}
                                 >
-                                    <SelectTrigger id="taxYear" className="w-[120px] mt-1">
+                                    <SelectTrigger id="type" className="w-[120px] mt-1">
                                         <SelectValue placeholder="All" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
-                                        {taxYears.map((year) => (
-                                            <SelectItem key={year} value={year.toString()}>
-                                                {year}
+                                        {documentTypes.map((type) => (
+                                            <SelectItem key={type} value={type}>
+                                                {type}
                                             </SelectItem>
                                         ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label htmlFor="filingType" className="text-sm font-medium">
-                                    Filing Type
-                                </Label>
-                                <Select
-                                    value={filters.filingType}
-                                    onValueChange={(value) => handleFilterChange("filingType", value)}
-                                >
-                                    <SelectTrigger id="filingType" className="w-[120px] mt-1">
-                                        <SelectValue placeholder="All" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All</SelectItem>
-                                        <SelectItem value="individual">Individual</SelectItem>
-                                        <SelectItem value="business">Business</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -221,8 +199,7 @@ export default function TaxFilingManagement() {
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="pending">Pending</SelectItem>
-                                        <SelectItem value="under_review">Under Review</SelectItem>
-                                        <SelectItem value="completed">Completed</SelectItem>
+                                        <SelectItem value="approved">Approved</SelectItem>
                                         <SelectItem value="rejected">Rejected</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -230,7 +207,7 @@ export default function TaxFilingManagement() {
                         </div>
                     </div>
 
-                    {/* Tax Filings Table */}
+                    {/* Documents Table */}
                     {loading ? (
                         <div className="flex justify-center py-8">
                             <div className="w-8 h-8 border-4 border-t-[#af0e0e] border-r-transparent border-l-transparent border-b-transparent rounded-full animate-spin"></div>
@@ -242,62 +219,57 @@ export default function TaxFilingManagement() {
                                     <thead className="bg-gray-100">
                                         <tr>
                                             <th className="p-3 font-medium">Name</th>
-                                            <th className="p-3 font-medium">CNIC</th>
-                                            <th className="p-3 font-medium">Tax Year</th>
-                                            <th className="p-3 font-medium">Filing Type</th>
+                                            <th className="p-3 font-medium">GST Registration</th>
+                                            <th className="p-3 font-medium">Type</th>
                                             <th className="p-3 font-medium">Status</th>
                                             <th className="p-3 font-medium">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {paginatedFilings.length === 0 ? (
+                                        {paginatedDocuments.length === 0 ? (
                                             <tr>
-                                                <td colSpan={6} className="p-3 text-center text-muted-foreground">
-                                                    No tax filings found
+                                                <td colSpan={5} className="p-3 text-center text-muted-foreground">
+                                                    No documents found
                                                 </td>
                                             </tr>
                                         ) : (
-                                            paginatedFilings.map((filing) => (
-                                                <tr key={filing._id} className="border-b">
-                                                    <td className="p-3">{filing.personalInfo?.fullName || "N/A"}</td>
-                                                    <td className="p-3">{filing.personalInfo?.cnic || "N/A"}</td>
-                                                    <td className="p-3">{filing.taxYear}</td>
-                                                    <td className="p-3 capitalize">{filing.filingType}</td>
+                                            paginatedDocuments.map((doc) => (
+                                                <tr key={doc.id} className="border-b">
+                                                    <td className="p-3">{doc.name || "N/A"}</td>
+                                                    <td className="p-3">{doc.gstRegistration || "N/A"}</td>
+                                                    <td className="p-3 capitalize">{doc.type}</td>
                                                     <td className="p-3">
                                                         <span
-                                                            className={`px-2 py-1 rounded-full text-xs ${filing.status === "completed"
+                                                            className={`px-2 py-1 rounded-full text-xs ${doc.status === "approved"
                                                                 ? "bg-green-100 text-green-800"
-                                                                : filing.status === "rejected"
+                                                                : doc.status === "rejected"
                                                                     ? "bg-red-100 text-red-800"
-                                                                    : filing.status === "under_review"
-                                                                        ? "bg-yellow-100 text-yellow-800"
-                                                                        : "bg-gray-100 text-gray-800"
+                                                                    : "bg-gray-100 text-gray-800"
                                                                 }`}
                                                         >
-                                                            {filing.status.replace("_", " ").toUpperCase()}
+                                                            {doc.status.toUpperCase()}
                                                         </span>
                                                     </td>
                                                     <td className="p-3 flex gap-2">
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
-                                                            onClick={() => handleViewFiling(filing._id)}
+                                                            onClick={() => handleViewDocument(doc.id)}
                                                             className="text-[#af0e0e] border-[#af0e0e] hover:bg-[#af0e0e] hover:text-white"
-                                                            aria-label={`View filing for ${filing.personalInfo?.fullName || "N/A"}`}
+                                                            aria-label={`View document ${doc.name || "N/A"}`}
                                                         >
                                                             View
                                                         </Button>
                                                         <Select
-                                                            value={filing.status}
-                                                            onValueChange={(value) => handleStatusChange(filing._id, value as UpdateFilingStatusDto['status'])}
+                                                            value={doc.status}
+                                                            onValueChange={(value) => handleStatusChange(doc.id, value as UpdateStatusDto['status'], doc.notes)}
                                                         >
-                                                            <SelectTrigger className="w-1/3">
+                                                            <SelectTrigger className="w-1/2.5">
                                                                 <SelectValue placeholder="Change Status" />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectItem value="pending">Pending</SelectItem>
-                                                                <SelectItem value="under_review">Under Review</SelectItem>
-                                                                <SelectItem value="completed">Completed</SelectItem>
+                                                                <SelectItem value="approved">Approved</SelectItem>
                                                                 <SelectItem value="rejected">Rejected</SelectItem>
                                                             </SelectContent>
                                                         </Select>
@@ -314,8 +286,8 @@ export default function TaxFilingManagement() {
                                 <div className="flex justify-between items-center mt-4">
                                     <p className="text-sm text-muted-foreground">
                                         Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                                        {Math.min(currentPage * itemsPerPage, filteredFilings.length)} of{" "}
-                                        {filteredFilings.length} filings
+                                        {Math.min(currentPage * itemsPerPage, filteredDocuments.length)} of{" "}
+                                        {filteredDocuments.length} documents
                                     </p>
                                     <div className="flex gap-2">
                                         <Button

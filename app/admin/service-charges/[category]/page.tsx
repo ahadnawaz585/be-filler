@@ -45,7 +45,6 @@ export default function EditServiceCharge() {
     const [services, setServices] = useState<Service[]>([
         { name: "", fee: "", completionTime: "", requirements: [""], contactMethods: [""] },
     ])
-
     const [openCollapsibles, setOpenCollapsibles] = useState<boolean[]>([])
     const [errors, setErrors] = useState({
         category: "",
@@ -53,7 +52,7 @@ export default function EditServiceCharge() {
     })
 
     const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    if (user.role !== 'admin') {
         return <Unauthorized />
     }
 
@@ -93,7 +92,7 @@ export default function EditServiceCharge() {
                     title: "Error",
                     description: "Failed to fetch service charge. Please try again.",
                 })
-                router.push("/accountant/service-charges")
+                router.push("/admin/service-charges")
             } finally {
                 setLoading(false)
             }
@@ -243,7 +242,7 @@ export default function EditServiceCharge() {
                 title: "Success",
                 description: "Service charge updated successfully.",
             })
-            router.push("/accountant/service-charges")
+            router.push("/admin/service-charges")
         } catch (e) {
             toast({
                 variant: "destructive",
@@ -537,7 +536,7 @@ export default function EditServiceCharge() {
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => router.push("/accountant/service-charges")}
+                                onClick={() => router.push("/admin/service-charges")}
                                 disabled={submitting || loading}
                             >
                                 Cancel

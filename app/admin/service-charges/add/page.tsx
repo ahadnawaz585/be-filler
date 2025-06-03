@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,19 +13,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import { useToast } from "@/components/ui/use-toast"
-import { ChevronDown, ChevronUp, Plus, Trash2, X } from "lucide-react"
+import { DollarSign, Plus, Trash2, X } from "lucide-react"
 import { ServiceChargesService, ServiceCharge } from "@/services/serviceCharges.service"
 import { getCurrentUser } from "@/lib/auth"
 import Unauthorized from "@/components/Unauthorized"
 
 interface Service {
-    _id?: string
     name: string
     fee: string
     completionTime: string
@@ -33,27 +27,22 @@ interface Service {
     contactMethods: string[]
 }
 
-export default function EditServiceCharge() {
+export default function AddServiceCharge() {
     const router = useRouter()
     const { toast } = useToast()
-    const { category } = useParams()
-    const [loading, setLoading] = useState(true)
-    const [submitting, setSubmitting] = useState(false)
-    const [serviceCharge, setServiceCharge] = useState<ServiceCharge | null>(null)
-    const [selectedCategory, setSelectedCategory] = useState("")
+    const [loading, setLoading] = useState(false)
+    const [category, setCategory] = useState("")
     const [customCategory, setCustomCategory] = useState("")
     const [services, setServices] = useState<Service[]>([
         { name: "", fee: "", completionTime: "", requirements: [""], contactMethods: [""] },
     ])
-
-    const [openCollapsibles, setOpenCollapsibles] = useState<boolean[]>([])
     const [errors, setErrors] = useState({
         category: "",
         services: [{ name: "", fee: "", completionTime: "", requirements: "", contactMethods: "" }],
     })
 
     const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    if (user.role !== 'admin') {
         return <Unauthorized />
     }
 
@@ -67,54 +56,26 @@ export default function EditServiceCharge() {
         "Custom",
     ]
 
-    useEffect(() => {
-        const fetchServiceCharge = async () => {
-            try {
-                const sc = new ServiceChargesService()
-                const res = await sc.getServiceChargeByCategory(decodeURIComponent(category as string))
-                setServiceCharge(res)
-                setSelectedCategory(categories.includes(res.category) ? res.category : "Custom")
-                if (!categories.includes(res.category)) {
-                    setCustomCategory(res.category)
-                }
-                setServices(res.services.length > 0 ? res.services : [
-                    { name: "", fee: "", completionTime: "", requirements: [""], contactMethods: [""] },
-                ])
-                setOpenCollapsibles(res.services.length > 0 ? res.services.map(() => false) : [false])
-                setErrors({
-                    category: "",
-                    services: res.services.length > 0 ? res.services.map(() => ({
-                        name: "", fee: "", completionTime: "", requirements: "", contactMethods: "",
-                    })) : [{ name: "", fee: "", completionTime: "", requirements: "", contactMethods: "" }],
-                })
-            } catch (e) {
-                toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "Failed to fetch service charge. Please try again.",
-                })
-                router.push("/accountant/service-charges")
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchServiceCharge()
-    }, [category, router, toast])
-
     const validateForm = () => {
         let isValid = true
         const newErrors = {
             category: "",
             services: services.map(() => ({
-                name: "", fee: "", completionTime: "", requirements: "", contactMethods: "",
+                name: "",
+                fee: "",
+                completionTime: "",
+                requirements: "",
+                contactMethods: "",
             })),
         }
 
-        if (!selectedCategory || (selectedCategory === "Custom" && !customCategory.trim())) {
+        // Validate category
+        if (!category || (category === "Custom" && !customCategory.trim())) {
             newErrors.category = "Category is required"
             isValid = false
         }
 
+        // Validate services
         services.forEach((service, index) => {
             if (!service.name.trim()) {
                 newErrors.services[index].name = "Service name is required"
@@ -139,20 +100,11 @@ export default function EditServiceCharge() {
         })
 
         setErrors(newErrors)
-        if (!isValid) {
-            const newOpenCollapsibles = services.map((_, index) => {
-                const serviceErrors = newErrors.services[index]
-                return Object.values(serviceErrors).some((error) => error !== "")
-            })
-            setOpenCollapsibles(newOpenCollapsibles)
-        }
         return isValid
     }
 
-    const handleAddService = (e: React.MouseEvent) => {
-        e.preventDefault()
+    const handleAddService = () => {
         setServices([...services, { name: "", fee: "", completionTime: "", requirements: [""], contactMethods: [""] }])
-        setOpenCollapsibles([...openCollapsibles, true])
         setErrors({
             ...errors,
             services: [
@@ -164,14 +116,17 @@ export default function EditServiceCharge() {
 
     const handleRemoveService = (index: number) => {
         setServices(services.filter((_, i) => i !== index))
-        setOpenCollapsibles(openCollapsibles.filter((_, i) => i !== index))
         setErrors({
             ...errors,
             services: errors.services.filter((_, i) => i !== index),
         })
     }
 
-    const handleServiceChange = (index: number, field: keyof Service, value: string | string[]) => {
+    const handleServiceChange = (
+        index: number,
+        field: keyof Service,
+        value: string | string[]
+    ) => {
         const newServices = [...services]
         newServices[index] = { ...newServices[index], [field]: value }
         setServices(newServices)
@@ -217,66 +172,45 @@ export default function EditServiceCharge() {
         setServices(newServices)
     }
 
-    const toggleCollapsible = (index: number) => {
-        const newOpenCollapsibles = [...openCollapsibles]
-        newOpenCollapsibles[index] = !newOpenCollapsibles[index]
-        setOpenCollapsibles(newOpenCollapsibles)
-    }
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!validateForm()) return
 
-        setSubmitting(true)
+        setLoading(true)
         try {
             const sc = new ServiceChargesService()
-            const data: Partial<ServiceCharge> = {
-                category: selectedCategory === "Custom" ? customCategory : selectedCategory,
+            const data: Omit<ServiceCharge, "_id" | "createdAt" | "updatedAt"> = {
+                category: category === "Custom" ? customCategory : category,
                 services: services.map((service) => ({
                     ...service,
                     requirements: service.requirements.filter((req) => req.trim()),
                     contactMethods: service.contactMethods.filter((cm) => cm.trim()),
                 })),
+                createdBy: "user", // Replace with actual user ID from auth context
             }
-            await sc.updateServiceCharge(decodeURIComponent(category as string), data)
+            await sc.createServiceCharge(data)
             toast({
                 title: "Success",
-                description: "Service charge updated successfully.",
+                description: "Service charge created successfully.",
             })
-            router.push("/accountant/service-charges")
+            router.push("/admin/service-charges")
         } catch (e) {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Failed to update service charge. Please try again.",
+                description: "Failed to create service charge. Please try again.",
             })
         } finally {
-            setSubmitting(false)
+            setLoading(false)
         }
-    }
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="w-8 h-8 border-4 border-t-[#af0e0e] border-r-transparent border-l-transparent border-b-transparent rounded-full animate-spin"></div>
-            </div>
-        )
-    }
-
-    if (!serviceCharge) {
-        return (
-            <div className="text-center py-8 text-red-500">
-                Failed to load service charge data
-            </div>
-        )
     }
 
     return (
         <div className="container px-4 mx-auto py-8 mt-16">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight">Edit Service Charge</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Add New Service Charge</h1>
                 <p className="text-muted-foreground text-sm mt-1">
-                    Update the service charge category and its associated services
+                    Create a new service charge category with associated services
                 </p>
             </div>
 
@@ -292,7 +226,7 @@ export default function EditServiceCharge() {
                                 <Label htmlFor="category" className="text-sm font-medium">
                                     Category
                                 </Label>
-                                <Select value={selectedCategory} onValueChange={setSelectedCategory} aria-label="Select category">
+                                <Select value={category} onValueChange={setCategory} aria-label="Select category">
                                     <SelectTrigger id="category" className="mt-1 bg-white">
                                         <SelectValue placeholder="Select a category" />
                                     </SelectTrigger>
@@ -307,7 +241,7 @@ export default function EditServiceCharge() {
                                 {errors.category && (
                                     <p className="text-red-500 text-sm mt-1">{errors.category}</p>
                                 )}
-                                {selectedCategory === "Custom" && (
+                                {category === "Custom" && (
                                     <Input
                                         placeholder="Enter custom category name"
                                         value={customCategory}
@@ -320,48 +254,24 @@ export default function EditServiceCharge() {
 
                             {/* Services */}
                             {services.map((service, serviceIndex) => (
-                                <Collapsible
-                                    key={service._id || `service-${serviceIndex}`}
-                                    open={openCollapsibles[serviceIndex]}
-                                    onOpenChange={() => toggleCollapsible(serviceIndex)}
-                                    className="border p-4 rounded-lg bg-gray-50"
+                                <div
+                                    key={serviceIndex}
+                                    className="border p-4 rounded-lg relative bg-gray-50"
                                 >
-                                    <CollapsibleTrigger asChild>
-                                        <div className="flex justify-between items-center cursor-pointer">
-                                            <h3 className="font-semibold text-lg">
-                                                Service {serviceIndex + 1}: {service.name || "New Service"}
-                                            </h3>
-                                            <div className="flex items-center gap-2">
-                                                {services.length > 1 && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            handleRemoveService(serviceIndex)
-                                                        }}
-                                                        aria-label={`Remove service ${serviceIndex + 1}`}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                                    </Button>
-                                                )}
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    aria-label={openCollapsibles[serviceIndex] ? `Collapse service ${serviceIndex + 1}` : `Expand service ${serviceIndex + 1}`}
-                                                >
-                                                    {openCollapsibles[serviceIndex] ? (
-                                                        <ChevronUp className="h-5 w-5" />
-                                                    ) : (
-                                                        <ChevronDown className="h-5 w-5" />
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </CollapsibleTrigger>
-                                    <CollapsibleContent className="pt-4 space-y-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-semibold text-lg">Service {serviceIndex + 1}</h3>
+                                        {services.length > 1 && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleRemoveService(serviceIndex)}
+                                                aria-label={`Remove service ${serviceIndex + 1}`}
+                                            >
+                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <div className="space-y-4">
                                         {/* Service Name */}
                                         <div>
                                             <Label htmlFor={`service-name-${serviceIndex}`} className="text-sm font-medium">
@@ -446,7 +356,6 @@ export default function EditServiceCharge() {
                                                     />
                                                     {service.requirements.length > 1 && (
                                                         <Button
-                                                            type="button"
                                                             variant="ghost"
                                                             size="sm"
                                                             onClick={() => handleRemoveRequirement(serviceIndex, reqIndex)}
@@ -463,7 +372,6 @@ export default function EditServiceCharge() {
                                                 </p>
                                             )}
                                             <Button
-                                                type="button"
                                                 variant="link"
                                                 size="sm"
                                                 onClick={() => handleAddRequirement(serviceIndex)}
@@ -489,7 +397,6 @@ export default function EditServiceCharge() {
                                                     />
                                                     {service.contactMethods.length > 1 && (
                                                         <Button
-                                                            type="button"
                                                             variant="ghost"
                                                             size="sm"
                                                             onClick={() => handleRemoveContactMethod(serviceIndex, cmIndex)}
@@ -506,7 +413,6 @@ export default function EditServiceCharge() {
                                                 </p>
                                             )}
                                             <Button
-                                                type="button"
                                                 variant="link"
                                                 size="sm"
                                                 onClick={() => handleAddContactMethod(serviceIndex)}
@@ -516,13 +422,12 @@ export default function EditServiceCharge() {
                                                 <Plus className="h-4 w-4 mr-1" /> Add Contact Method
                                             </Button>
                                         </div>
-                                    </CollapsibleContent>
-                                </Collapsible>
+                                    </div>
+                                </div>
                             ))}
 
                             {/* Add Service Button */}
                             <Button
-                                type="button"
                                 variant="outline"
                                 onClick={handleAddService}
                                 className="mt-4"
@@ -535,19 +440,18 @@ export default function EditServiceCharge() {
                         {/* Form Actions */}
                         <div className="mt-6 flex justify-end gap-4">
                             <Button
-                                type="button"
                                 variant="outline"
-                                onClick={() => router.push("/accountant/service-charges")}
-                                disabled={submitting || loading}
+                                onClick={() => router.push("/admin/service-charges")}
+                                disabled={loading}
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
                                 className="bg-[#af0e0e] hover:bg-[#8a0b0b] text-white"
-                                disabled={submitting || loading}
+                                disabled={loading}
                             >
-                                {submitting ? "Updating..." : "Update Service Charge"}
+                                {loading ? "Creating..." : "Create Service Charge"}
                             </Button>
                         </div>
                     </form>

@@ -21,6 +21,7 @@ import {
 import { getCurrentUser } from "@/lib/auth"
 import { ITaxFiling, TaxFilingService } from "@/services/taxFiling.service"
 import Cookies from "js-cookie"
+import Unauthorized from "@/components/Unauthorized"
 
 interface INumbers {
   completed: number,
@@ -41,7 +42,10 @@ export default function Dashboard() {
     total: 0
   })
 
-
+  const userRed = getCurrentUser();
+  if (userRed.role !== 'admin') {
+    return <Unauthorized />
+  }
 
   useEffect(() => {
     // For development - bypass authentication and use mock user

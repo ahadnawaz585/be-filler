@@ -16,6 +16,8 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { DollarSign, Plus, Trash2, X } from "lucide-react"
 import { ServiceChargesService, ServiceCharge } from "@/services/serviceCharges.service"
+import { getCurrentUser } from "@/lib/auth"
+import Unauthorized from "@/components/Unauthorized"
 
 interface Service {
     name: string
@@ -38,6 +40,10 @@ export default function AddServiceCharge() {
         category: "",
         services: [{ name: "", fee: "", completionTime: "", requirements: "", contactMethods: "" }],
     })
+    const user = getCurrentUser();
+    if (user.role !== 'accountant') {
+        return <Unauthorized />
+    }
 
     const categories = [
         "NTN Registration Services",
