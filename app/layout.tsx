@@ -25,9 +25,10 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <div className="flex min-h-screen flex-col">
-            <Header />
+            {/* <Header />
             <main className="flex-1">{children}</main>
-            <Footer />
+            <Footer /> */}
+            Eid Mubarak  🙂
           </div>
           <Toaster />
         </ThemeProvider>
