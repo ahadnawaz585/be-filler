@@ -12,20 +12,20 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogsPage() {
-    // let blogs: any = [];
-    // let error: string | null = null;
+    let blogs: any = [];
+    let error: string | null = null;
 
-    // try {
-    //     const contentService = new ContentService();
-    //     blogs = await contentService.getAllContent();
-    // } catch (err: any) {
-    //     console.error('Error fetching blogs:', err);
-    //     error = 'Failed to load blogs. Please try again later.';
-    // }
+    try {
+        const contentService = new ContentService();
+        blogs = await contentService.getAllContent();
+    } catch (err: any) {
+        console.error('Error fetching blogs:', err);
+        error = 'Failed to load blogs. Please try again later.';
+    }
 
     return (
         <Suspense fallback={<div className="text-center text-gray-600 font-poppins py-20">Loading blogs...</div>}>
-            {/* <BlogsClient blogs={blogs} error={error} /> */}
+            <BlogsClient blogs={blogs} error={error} /> 
         </Suspense>
     );
 }
