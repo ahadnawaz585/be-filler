@@ -28,7 +28,7 @@ export default function RootLayout({
             {/* <Header />
             <main className="flex-1">{children}</main>
             <Footer /> */}
-            4 0 4 🙂
+    
           </div>
           {/* <Toaster /> */}
         </ThemeProvider>
