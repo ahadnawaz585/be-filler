@@ -30,7 +30,7 @@ export default function RootLayout({
             <Footer /> */}
             4 0 4 🙂
           </div>
-          <Toaster />
+          {/* <Toaster /> */}
         </ThemeProvider>
       </body>
     </html>
