@@ -32,7 +32,10 @@ export default function RootLayout({
         >
           <div className="flex min-h-screen flex-col">
             {/* <Header /> */}
-<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLetew0YhOQw_4JD-690PEETBPbWTNfl6joA&s" alt="PAISA LAYA ?" />
+            {/* <img
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLetew0YhOQw_4JD-690PEETBPbWTNfl6joA&s"
+              alt="PAISA LAYA ?"
+            /> */}
             {/* <main className="flex-1">{children}</main> */}
             {/* <Footer /> */}
           </div>
