@@ -31,11 +31,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
+            {/* <Header /> */}
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLetew0YhOQw_4JD-690PEETBPbWTNfl6joA&s" alt="PAISA LAYA ?" />
+            {/* <main className="flex-1">{children}</main> */}
+            {/* <Footer /> */}
           </div>
-          <Toaster />
+          {/* <Toaster /> */}
         </ThemeProvider>
       </body>
     </html>
