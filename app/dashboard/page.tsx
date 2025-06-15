@@ -42,10 +42,10 @@ export default function Dashboard() {
     total: 0
   })
 
-  const userRed:any = getCurrentUser();
-  if (userRed?.role !== 'admin') {
-    return <Unauthorized />
-  }
+  // const userRed:any = getCurrentUser();
+  // if (userRed?.role !== 'admin') {
+  //   return <Unauthorized />
+  // }
 
   useEffect(() => {
     // For development - bypass authentication and use mock user
