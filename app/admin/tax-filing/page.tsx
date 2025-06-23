@@ -18,6 +18,7 @@ import { Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { TaxFilingService, ITaxFiling, UpdateFilingStatusDto } from "@/services/taxFiling.service"
 import { getCurrentUser } from "@/lib/auth"
 import Unauthorized from "@/components/Unauthorized"
+import { UserServices } from "@/services/user.service"
 
 export default function TaxFilingManagement() {
     const router = useRouter()
@@ -32,9 +33,11 @@ export default function TaxFilingManagement() {
         status: "",
     })
     const [currentPage, setCurrentPage] = useState(1)
+    const [userCache, setUserCache] = useState<Record<string, string>>({})
     const itemsPerPage = 10
-    const user = getCurrentUser();
-    if (user.role !== 'admin') {
+    const user = getCurrentUser()
+
+    if (user.role !== "admin") {
         return <Unauthorized />
     }
 
@@ -45,6 +48,26 @@ export default function TaxFilingManagement() {
                 const filings = await service.getAll()
                 setTaxFilings(filings)
                 setFilteredFilings(filings)
+
+                // Fetch user names for unique assignedTo IDs
+                const userService = new UserServices()
+                const uniqueUserIds = Array.from(
+                    new Set(filings.map((filing) => filing.assignedTo).filter((id): id is string => !!id))
+                )
+                const userPromises = uniqueUserIds.map(async (userId) => {
+                    try {
+                        const user = await userService.getById(userId)
+                        return { userId, fullName: user?.fullName || "N/A" }
+                    } catch (error) {
+                        console.error(`Error fetching user ${userId}:`, error)
+                        return { userId, fullName: "N/A" }
+                    }
+                })
+                const userResults = await Promise.all(userPromises)
+                const newUserCache = Object.fromEntries(
+                    userResults.map(({ userId, fullName }) => [userId, fullName])
+                )
+                setUserCache(newUserCache)
             } catch (e) {
                 toast({
                     variant: "destructive",
@@ -98,15 +121,15 @@ export default function TaxFilingManagement() {
         router.push(`/admin/tax-filing/${filingId}`)
     }
 
-    const handleStatusChange = async (filingId: string, newStatus: UpdateFilingStatusDto['status']) => {
+    const handleStatusChange = async (filingId: string, newStatus: UpdateFilingStatusDto["status"]) => {
         try {
             const service = new TaxFilingService()
             const updateData: UpdateFilingStatusDto = { status: newStatus }
             const updatedFiling = await service.updateStatus(filingId, updateData)
 
             // Update local state
-            setTaxFilings(prev =>
-                prev.map(filing =>
+            setTaxFilings((prev) =>
+                prev.map((filing) =>
                     filing._id === filingId ? { ...filing, status: updatedFiling.status } : filing
                 )
             )
@@ -131,17 +154,15 @@ export default function TaxFilingManagement() {
         currentPage * itemsPerPage
     )
 
-    const taxYears = Array.from(
-        new Set(taxFilings.map((filing) => filing.taxYear))
-    ).sort((a, b) => b - a)
+    const taxYears = Array.from(new Set(taxFilings.map((filing) => filing.taxYear))).sort(
+        (a, b) => b - a
+    )
 
     return (
         <div className="container px-4 mx-auto py-8 mt-16">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold tracking-tight">Tax Filing Management</h1>
-                <p className="text-muted-foreground text-sm mt-1">
-                    View and manage tax filings
-                </p>
+                <p className="text-muted-foreground text-sm mt-1">View and manage tax filings</p>
             </div>
 
             <Card className="w-full border shadow-sm">
@@ -245,6 +266,7 @@ export default function TaxFilingManagement() {
                                             <th className="p-3 font-medium">CNIC</th>
                                             <th className="p-3 font-medium">Tax Year</th>
                                             <th className="p-3 font-medium">Filing Type</th>
+                                            <th className="p-3 font-medium">Assigned to</th>
                                             <th className="p-3 font-medium">Status</th>
                                             <th className="p-3 font-medium">Actions</th>
                                         </tr>
@@ -252,7 +274,7 @@ export default function TaxFilingManagement() {
                                     <tbody>
                                         {paginatedFilings.length === 0 ? (
                                             <tr>
-                                                <td colSpan={6} className="p-3 text-center text-muted-foreground">
+                                                <td colSpan={7} className="p-3 text-center text-muted-foreground">
                                                     No tax filings found
                                                 </td>
                                             </tr>
@@ -263,6 +285,7 @@ export default function TaxFilingManagement() {
                                                     <td className="p-3">{filing.personalInfo?.cnic || "N/A"}</td>
                                                     <td className="p-3">{filing.taxYear}</td>
                                                     <td className="p-3 capitalize">{filing.filingType}</td>
+                                                    <td className="p-3">{userCache[filing.assignedTo] || "N/A"}</td>
                                                     <td className="p-3">
                                                         <span
                                                             className={`px-2 py-1 rounded-full text-xs ${filing.status === "completed"
@@ -289,7 +312,9 @@ export default function TaxFilingManagement() {
                                                         </Button>
                                                         <Select
                                                             value={filing.status}
-                                                            onValueChange={(value) => handleStatusChange(filing._id, value as UpdateFilingStatusDto['status'])}
+                                                            onValueChange={(value) =>
+                                                                handleStatusChange(filing._id, value as UpdateFilingStatusDto["status"])
+                                                            }
                                                         >
                                                             <SelectTrigger className="w-1/3">
                                                                 <SelectValue placeholder="Change Status" />

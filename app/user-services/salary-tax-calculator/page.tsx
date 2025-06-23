@@ -1,38 +1,74 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Calculator, ArrowLeft, RefreshCw, DollarSign, Receipt } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Calculator, ArrowLeft, RefreshCw, DollarSign, Receipt } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function TaxCalculator() {
-    const router = useRouter();
-    const { toast } = useToast();
-    const [monthlySalary, setMonthlySalary] = useState<string>("");
+    const router = useRouter()
+    const { toast } = useToast()
+    const [monthlySalary, setMonthlySalary] = useState<string>("")
+    const [taxYear, setTaxYear] = useState<string>("")
     const [results, setResults] = useState<{
-        yearlySalary: number;
-        monthlyTax: number;
-        yearlyTax: number;
-        monthlySalaryAfterTax: number;
-        yearlySalaryAfterTax: number;
-    } | null>(null);
+        yearlySalary: number
+        monthlyTax: number
+        yearlyTax: number
+        monthlySalaryAfterTax: number
+        yearlySalaryAfterTax: number
+        taxYear: string
+    } | null>(null)
 
-    const TAX_RATE = 0.0477273; // 4.77273%
+    // Tax slabs for salaried individuals (Pakistan)
+    const taxSlabs: Record<string, Array<{ min: number; max: number | null; baseTax: number; rate: number }>> = {
+        "2023-2024": [
+            { min: 0, max: 600000, baseTax: 0, rate: 0 },
+            { min: 600001, max: 1200000, baseTax: 0, rate: 0.025 },
+            { min: 1200001, max: 2400000, baseTax: 15000, rate: 0.125 },
+            { min: 2400001, max: 3600000, baseTax: 165000, rate: 0.2 },
+            { min: 3600001, max: 6000000, baseTax: 405000, rate: 0.25 },
+            { min: 6000001, max: null, baseTax: 1005000, rate: 0.35 },
+        ],
+        "2024-2025": [
+            { min: 0, max: 600000, baseTax: 0, rate: 0 },
+            { min: 600001, max: 1200000, baseTax: 0, rate: 0.05 },
+            { min: 1200001, max: 2200000, baseTax: 30000, rate: 0.15 },
+            { min: 2200001, max: 3200000, baseTax: 180000, rate: 0.25 },
+            { min: 3200001, max: 4100000, baseTax: 430000, rate: 0.3 },
+            { min: 4100001, max: null, baseTax: 700000, rate: 0.35 },
+        ],
+    }
 
     const formatCurrency = (amount: number): string => {
         return new Intl.NumberFormat("en-PK", {
             style: "currency",
             currency: "PKR",
             minimumFractionDigits: 0,
-        }).format(amount);
-    };
+        }).format(amount)
+    }
+
+    const calculateTax = (yearlySalary: number, taxYear: string): number => {
+        const slabs = taxSlabs[taxYear]
+        let tax = 0
+
+        for (const slab of slabs) {
+            if (yearlySalary > slab.min && (slab.max === null || yearlySalary <= slab.max)) {
+                const taxableAmount = yearlySalary - slab.min
+                tax = slab.baseTax + taxableAmount * slab.rate
+                break
+            }
+        }
+
+        return tax
+    }
 
     const handleCalculate = () => {
-        const salary = parseFloat(monthlySalary);
+        const salary = parseFloat(monthlySalary)
 
         // Validation
         if (isNaN(salary) || salary <= 0) {
@@ -40,16 +76,24 @@ export default function TaxCalculator() {
                 title: "Error",
                 description: "Please enter a valid monthly salary greater than 0.",
                 variant: "destructive",
-            });
-            return;
+            })
+            return
+        }
+        if (!taxYear) {
+            toast({
+                title: "Error",
+                description: "Please select a tax year.",
+                variant: "destructive",
+            })
+            return
         }
 
         // Calculations
-        const yearlySalary = salary * 12;
-        const monthlyTax = salary * TAX_RATE;
-        const yearlyTax = yearlySalary * TAX_RATE;
-        const monthlySalaryAfterTax = salary - monthlyTax;
-        const yearlySalaryAfterTax = yearlySalary - yearlyTax;
+        const yearlySalary = salary * 12
+        const yearlyTax = calculateTax(yearlySalary, taxYear)
+        const monthlyTax = yearlyTax / 12
+        const monthlySalaryAfterTax = salary - monthlyTax
+        const yearlySalaryAfterTax = yearlySalary - yearlyTax
 
         setResults({
             yearlySalary,
@@ -57,17 +101,19 @@ export default function TaxCalculator() {
             yearlyTax,
             monthlySalaryAfterTax,
             yearlySalaryAfterTax,
-        });
-    };
+            taxYear,
+        })
+    }
 
     const handleReset = () => {
-        setMonthlySalary("");
-        setResults(null);
-    };
+        setMonthlySalary("")
+        setTaxYear("")
+        setResults(null)
+    }
 
     const handleBack = () => {
-        router.push("/dashboard");
-    };
+        router.push("/dashboard")
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 p-6 sm:p-20">
@@ -91,11 +137,9 @@ export default function TaxCalculator() {
                 {/* Calculator Card */}
                 <Card className="border border-red-200 shadow-lg animate-in fade-in duration-500">
                     <CardHeader>
-                        <CardTitle className="text-2xl font-semibold text-gray-900">
-                            Calculate Your Tax
-                        </CardTitle>
+                        <CardTitle className="text-2xl font-semibold text-gray-900">Calculate Your Tax</CardTitle>
                         <p className="text-gray-600">
-                            Enter your monthly salary to calculate your tax obligations at a rate of 4.77%.
+                            Enter your monthly salary and select a tax year to calculate your tax obligations.
                         </p>
                     </CardHeader>
                     <CardContent>
@@ -115,29 +159,48 @@ export default function TaxCalculator() {
                                         className="border-gray-300 focus:border-[#af0e0e] focus:ring-[#af0e0e]"
                                     />
                                 </div>
-                                <div className="flex items-end space-x-3">
-                                    <Button
-                                        onClick={handleCalculate}
-                                        className="bg-[#af0e0e] hover:bg-[#af0e0e]/90 text-white transition-all duration-200 hover:shadow-lg"
-                                    >
-                                        <Calculator className="h-4 w-4 mr-2" />
-                                        Calculate Tax
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        onClick={handleReset}
-                                        className="transition-shadow hover:shadow-sm"
-                                    >
-                                        <RefreshCw className="h-4 w-4 mr-2" />
-                                        Reset
-                                    </Button>
+                                <div className="space-y-2">
+                                    <Label htmlFor="tax-year" className="text-gray-700">
+                                        Tax Year
+                                    </Label>
+                                    <Select onValueChange={setTaxYear} value={taxYear}>
+                                        <SelectTrigger
+                                            id="tax-year"
+                                            className="border-gray-300 focus:border-[#af0e0e] focus:ring-[#af0e0e]"
+                                        >
+                                            <SelectValue placeholder="Select tax year" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="2023-2024">2023-2024</SelectItem>
+                                            <SelectItem value="2024-2025">2024-2025</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
+                            </div>
+                            <div className="flex space-x-3">
+                                <Button
+                                    onClick={handleCalculate}
+                                    className="bg-[#af0e0e] hover:bg-[#af0e0e]/90 text-white transition-all duration-200 hover:shadow-lg"
+                                >
+                                    <Calculator className="h-4 w-4 mr-2" />
+                                    Calculate Tax
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleReset}
+                                    className="transition-shadow hover:shadow-sm"
+                                >
+                                    <RefreshCw className="h-4 w-4 mr-2" />
+                                    Reset
+                                </Button>
                             </div>
 
                             {/* Results */}
                             {results && (
                                 <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Tax Calculation Results</h3>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                                        Tax Calculation Results (Tax Year: {results.taxYear})
+                                    </h3>
                                     <div className="space-y-6">
                                         {/* Monthly Figures Row */}
                                         <div>
@@ -159,7 +222,7 @@ export default function TaxCalculator() {
                                                         <Receipt className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-gray-700">Monthly Tax (4.77%)</p>
+                                                        <p className="text-sm font-medium text-gray-700">Monthly Tax</p>
                                                         <p className="text-lg font-semibold text-gray-900">
                                                             {formatCurrency(results.monthlyTax)}
                                                         </p>
@@ -199,7 +262,7 @@ export default function TaxCalculator() {
                                                         <Receipt className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-gray-700">Yearly Tax (4.77%)</p>
+                                                        <p className="text-sm font-medium text-gray-700">Yearly Tax</p>
                                                         <p className="text-lg font-semibold text-gray-900">
                                                             {formatCurrency(results.yearlyTax)}
                                                         </p>
@@ -226,5 +289,5 @@ export default function TaxCalculator() {
                 </Card>
             </div>
         </div>
-    );
+    )
 }

@@ -43,7 +43,7 @@ export default function Dashboard() {
   })
 
   const userRed = getCurrentUser();
-  if (userRed.role !== 'admin') {
+  if (userRed.role !== 'user') {
     return <Unauthorized />
   }
 

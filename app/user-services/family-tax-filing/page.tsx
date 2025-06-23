@@ -130,7 +130,7 @@ const FamilyTaxFiling = () => {
     };
 
     const validateMobile = (value: string) => {
-        const mobilePattern = /^\d{4}-\d{7}$/;
+        const mobilePattern = /^\d{11}$/;
         return mobilePattern.test(value) ? value : '';
     };
 

@@ -163,7 +163,7 @@ const Header = () => {
       path: "/services/income-tax-returns",
       subServices: [
         { name: "Tax Filing", path: "/services/income-tax-returns/tax-filing" },
-        { name: "Wealth Statement", path: "/services/income-tax-returns/wealth-statement" },
+        // { name: "Wealth Statement", path: "/services/income-tax-returns/wealth-statement" },
       ],
     },
     { name: "Tax Registration", path: "/services/tax-registration" },
