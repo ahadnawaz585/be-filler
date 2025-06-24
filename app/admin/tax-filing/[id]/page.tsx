@@ -688,6 +688,7 @@ export default function TaxFilingDetails() {
                                     </Label>
                                     <div className="relative">
                                         <Input
+                                            disabled
                                             id="assignedTo"
                                             value={statusUpdate.fullName || ""}
                                             onChange={(e) =>

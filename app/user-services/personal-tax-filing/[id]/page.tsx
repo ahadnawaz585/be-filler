@@ -254,8 +254,8 @@ export default function PersonalTaxFiling() {
     { id: 10, title: "Liabilities", shortTitle: "Liabilities" },
     { id: 11, title: "Expense Details", shortTitle: "Expense" },
     { id: 12, title: "Tax Credits", shortTitle: "Credits" },
-    { id: 13, title: "Document Upload", shortTitle: "Docs" },
-    { id: 14, title: "Review & Submit", shortTitle: "Review" },
+    // { id: 13, title: "Document Upload", shortTitle: "Docs" },
+    { id: 13, title: "Review & Submit", shortTitle: "Review" },
   ]
 
   const handleInputChange = (field: string, value: any) => {
@@ -353,9 +353,9 @@ export default function PersonalTaxFiling() {
         return !!formData.expense
       case 12:
         return true // Tax credits are optional
+      // case 13:
+      //   return formData.documentsUploaded
       case 13:
-        return formData.documentsUploaded
-      case 14:
         return formData.consentGiven
       default:
         return true
@@ -491,10 +491,10 @@ export default function PersonalTaxFiling() {
           taxCredits: formData.taxCredits
         })
       }
+      // if (currentStep === 13) {
+      // await ts.step8(taxFilingId, { documents: formData.documentsUploaded ? [/* document IDs */] : [] })
+      // }
       if (currentStep === 13) {
-        // await ts.step8(taxFilingId, { documents: formData.documentsUploaded ? [/* document IDs */] : [] })
-      }
-      if (currentStep === 14) {
         await ts.submitFiling(taxFilingId)
         toast({
           title: "Success",
@@ -549,9 +549,9 @@ export default function PersonalTaxFiling() {
         return <BankDetailsStep formData={formData} handleInputChange={handleInputChange} />
       case 12:
         return <TaxCreditsStep formData={formData} handleInputChange={handleInputChange} />
+      // case 13:
+      //   return <DocumentUploadStep formData={formData} handleInputChange={handleInputChange} />
       case 13:
-        return <DocumentUploadStep formData={formData} handleInputChange={handleInputChange} />
-      case 14:
         return <ReviewSubmitStep formData={formData} handleInputChange={handleInputChange} />
       default:
         return null

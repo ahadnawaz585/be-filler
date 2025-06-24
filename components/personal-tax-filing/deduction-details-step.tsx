@@ -156,10 +156,9 @@ export default function DeductionDetailsStep({ formData, handleInputChange }: De
                                             <SelectValue placeholder="Select transaction type" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="savings">Savings Account</SelectItem>
-                                            <SelectItem value="current">Current Account</SelectItem>
-                                            <SelectItem value="foreign">Foreign Currency Account</SelectItem>
-                                            <SelectItem value="business">Business Account</SelectItem>
+                                            <SelectItem value="cash transaction">Cash Transaction</SelectItem>
+                                            <SelectItem value="profit on debt">Profit on Debt</SelectItem>
+                                            <SelectItem value="others">Others</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
