@@ -22,7 +22,7 @@ export default function DocumentReports() {
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
     const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    if (user?.role !== 'accountant') {
         return <Unauthorized />
     }
     useEffect(() => {

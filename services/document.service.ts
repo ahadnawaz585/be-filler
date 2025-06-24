@@ -1,5 +1,6 @@
 import { axiosInstance } from "@/lib/ApiClient";
 import { BaseService } from "./base.service";
+import axios from "axios";
 //importing from the server file 
 
 
@@ -76,6 +77,7 @@ export class DocumentService extends BaseService {
   }
 
   async viewDocument(filename: string): Promise<any> {
+    console.log("Viewing document:", filename);
     return this.get<any>(`/view/${filename}`);
   }
 

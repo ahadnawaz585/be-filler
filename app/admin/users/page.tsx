@@ -25,7 +25,7 @@ export default function UsersTable() {
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
     const userRed = getCurrentUser();
-    if (userRed.role !== 'admin') {
+    if (userRed?.role !== 'admin') {
         return <Unauthorized />
     }
     // Fetch all users

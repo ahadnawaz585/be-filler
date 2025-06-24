@@ -23,7 +23,7 @@ export default function DocumentReports() {
     const itemsPerPage = 10
 
     const user = getCurrentUser();
-    if (user.role !== 'admin') {
+    if (user?.role !== 'admin') {
         return <Unauthorized />
     }
 

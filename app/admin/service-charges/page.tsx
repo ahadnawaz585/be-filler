@@ -39,7 +39,7 @@ export default function ServiceChargesManagement() {
     const [deleting, setDeleting] = useState(false)
 
     const user = getCurrentUser();
-    if (user.role !== 'admin') {
+    if (user?.role !== 'admin') {
         return <Unauthorized />
     }
 

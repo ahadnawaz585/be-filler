@@ -53,7 +53,7 @@ export default function EditServiceCharge() {
     })
 
     const user = getCurrentUser();
-    if (user.role !== 'accountant') {
+    if (user?.role !== 'accountant') {
         return <Unauthorized />
     }
 

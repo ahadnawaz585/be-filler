@@ -69,7 +69,7 @@ export default function TaxFilingDetails() {
     const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
 
     const user = getCurrentUser();
-    if (user.role !== 'admin') {
+    if (user?.role !== 'admin') {
         return <Unauthorized />
     }
 

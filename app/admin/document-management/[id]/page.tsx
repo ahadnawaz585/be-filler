@@ -26,7 +26,7 @@ export default function DocumentDetail() {
     const [loading, setLoading] = useState(true)
 
     const user = getCurrentUser();
-    if (user.role !== 'admin') {
+    if (user?.role !== 'admin') {
         return <Unauthorized />
     }
 
@@ -75,11 +75,14 @@ export default function DocumentDetail() {
 
     const handleViewFile = async () => {
         if (!document?.fileUrl) return
+        console.log("Original fileUrl:", document.fileUrl);
+        console.log("Sliced filename:", document.fileUrl.slice(9));
         try {
             const service = new DocumentService()
-            await service.viewDocument(document.fileUrl)
-            window.open(document.fileUrl, "_blank")
+            const response = await service.viewDocument(document.fileUrl.slice(9))
+            window.open(response, "_blank")
         } catch (e) {
+            console.error("View document error:", e);
             toast({
                 variant: "destructive",
                 title: "Error",
