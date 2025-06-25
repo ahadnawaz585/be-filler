@@ -22,7 +22,7 @@ export default function DocumentReports() {
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
 
-    const user:any = getCurrentUser();
+    const user = getCurrentUser();
     if (user?.role !== 'admin') {
         return <Unauthorized />
     }

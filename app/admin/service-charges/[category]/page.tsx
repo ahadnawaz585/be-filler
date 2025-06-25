@@ -52,7 +52,7 @@ export default function EditServiceCharge() {
     })
 
     const user = getCurrentUser();
-    if (user.role !== 'admin') {
+    if (user?.role !== 'admin') {
         return <Unauthorized />
     }
 

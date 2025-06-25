@@ -37,7 +37,7 @@ export default function TaxFilingManagement() {
     const itemsPerPage = 10
     const user = getCurrentUser()
 
-    if (user.role !== "accountant") {
+    if (user?.role !== "accountant") {
         return <Unauthorized />
     }
 
