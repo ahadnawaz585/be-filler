@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, X, ChevronDown } from "lucide-react"
+import { Menu, X, ChevronDown, ShoppingCart } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/ui/mode-toggle"
@@ -35,10 +35,8 @@ const Header = () => {
     const checkAuthAndFetchData = async () => {
       setLoading(true)
       try {
-        console.log("Checking auth...")
         const userCookie = Cookies.get("user")
         const token = Cookies.get("token")
-        console.log("Cookies - user:", userCookie, "token:", token)
 
         if (userCookie && token) {
           try {
@@ -47,12 +45,9 @@ const Header = () => {
               setIsLoggedIn(true)
               setUserRole(parsedUser.role)
               setUser(parsedUser)
-              console.log("Logged in, role:", parsedUser.role)
 
-              // Fetch other accounts only if user is set
               const us = new UserServices()
               const userData = await us.getById(parsedUser.id)
-              // Only update user if userData has a role, otherwise keep parsedUser
               if (userData.role) {
                 setUser(userData)
               }
@@ -65,10 +60,8 @@ const Header = () => {
                   })
                 )
                 setOtherAccounts(otherUsers)
-                console.log("Other accounts:", otherUsers)
               }
             } else {
-              console.log("Invalid user data: no role")
               // handleLogOut()
             }
           } catch (parseError) {
@@ -76,7 +69,6 @@ const Header = () => {
             // handleLogOut()
           }
         } else {
-          console.log("Not logged in: missing user or token")
           setIsLoggedIn(false)
           setUserRole(null)
           setUser(null)
@@ -113,13 +105,11 @@ const Header = () => {
       })
       Cookies.set("token", result.token, { sameSite: "Strict" })
       Cookies.set("user", JSON.stringify(result.user), { sameSite: "Strict" })
-
-      // Update local state
       setIsLoggedIn(true)
       setUserRole(result.user.role)
       setUser(result.user)
       setIsMenuOpen(false)
-      location.reload();
+      location.reload()
     } else {
       toast({
         title: "Login Failed",
@@ -138,15 +128,6 @@ const Header = () => {
     setUser(null)
     setOtherAccounts(null)
     setIsMenuOpen(false)
-
-    const userCookie = Cookies.get("user")
-    const token = Cookies.get("token")
-    console.log("After logout - user:", userCookie, "token:", token)
-    if (!userCookie && !token) {
-      console.log("Cookies cleared successfully")
-    } else {
-      console.warn("Cookies not cleared properly")
-    }
     router.push("/")
   }
 
@@ -163,7 +144,6 @@ const Header = () => {
       path: "/services/income-tax-returns",
       subServices: [
         { name: "Tax Filing", path: "/services/income-tax-returns/tax-filing" },
-        // { name: "Wealth Statement", path: "/services/income-tax-returns/wealth-statement" },
       ],
     },
     { name: "Tax Registration", path: "/services/tax-registration" },
@@ -178,7 +158,6 @@ const Header = () => {
     accountant: [{ name: "Accounts", path: "/dashboard/accountant" }],
   }
 
-  // Don't render anything while loading
   if (loading) {
     return (
       <header className="fixed top-0 left-0 right-0 z-50 w-full bg-background border-b shadow-sm">
@@ -228,7 +207,6 @@ const Header = () => {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
             {navLinks.map((link) => (
               <React.Fragment key={link.name}>
@@ -290,7 +268,6 @@ const Header = () => {
               </React.Fragment>
             ))}
 
-            {/* Dashboard Links for Logged in Users */}
             {isLoggedIn && userRole && loggedInLinks[userRole as keyof typeof loggedInLinks] && (
               <>
                 {loggedInLinks[userRole as keyof typeof loggedInLinks].map((link) => (
@@ -306,6 +283,18 @@ const Header = () => {
                   </Link>
                 ))}
               </>
+            )}
+
+            {isLoggedIn && userRole === "user" && (
+              <Link
+                href="/service-charges"
+                className={cn(
+                  "flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-accent",
+                  pathname === "/service-charges" ? "text-primary" : "text-foreground"
+                )}
+              >
+                <ShoppingCart className="h-5 w-5" />
+              </Link>
             )}
           </nav>
 
@@ -329,23 +318,21 @@ const Header = () => {
                   </div>
 
                   {otherAccounts && otherAccounts.length > 0 && (
-                    <>
-                      <div className="p-2">
-                        <p className="text-sm font-medium text-muted-foreground mb-2">Switch Account</p>
-                        {otherAccounts.map((o: IUser, idx) => (
-                          <DropdownMenuItem
-                            key={o._id}
-                            className="p-2 hover:bg-accent rounded-md text-sm flex justify-between items-center cursor-pointer"
-                            onClick={() => handleChangeAcc(o.email, o.password || "")}
-                          >
-                            <span>{o.fullName}</span>
-                            <span className="text-muted-foreground text-xs">
-                              {user?.relations?.[idx]?.relation || "N/A"}
-                            </span>
-                          </DropdownMenuItem>
-                        ))}
-                      </div>
-                    </>
+                    <div className="p-2">
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Switch Account</p>
+                      {otherAccounts.map((o: IUser, idx) => (
+                        <DropdownMenuItem
+                          key={o._id}
+                          className="p-2 hover:bg-accent rounded-md text-sm flex justify-between items-center cursor-pointer"
+                          onClick={() => handleChangeAcc(o.email, o.password || "")}
+                        >
+                          <span>{o.fullName}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {user?.relations?.[idx]?.relation || "N/A"}
+                          </span>
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
                   )}
 
                   <DropdownMenuItem
@@ -370,7 +357,6 @@ const Header = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-4">
             <ModeToggle />
             <button
@@ -383,7 +369,6 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-background border-t">
           <div className="px-2 pt-2 pb-3 space-y-1">
@@ -452,7 +437,6 @@ const Header = () => {
               </React.Fragment>
             ))}
 
-            {/* Mobile Dashboard Links */}
             {isLoggedIn && userRole && loggedInLinks[userRole as keyof typeof loggedInLinks] && (
               <>
                 {loggedInLinks[userRole as keyof typeof loggedInLinks].map((link) => (
@@ -469,6 +453,19 @@ const Header = () => {
                   </Link>
                 ))}
               </>
+            )}
+
+            {isLoggedIn && userRole === "user" && (
+              <Link
+                href="/service-charges"
+                className={cn(
+                  "block px-3 py-2 text-base font-medium rounded-md hover:bg-accent",
+                  pathname === "/service-charges" ? "text-primary" : "text-foreground"
+                )}
+                onClick={toggleMenu}
+              >
+                <ShoppingCart className="h-6 w-6 mr-2 inline" /> Cart
+              </Link>
             )}
 
             <div className="pt-4 pb-3 border-t border-border">

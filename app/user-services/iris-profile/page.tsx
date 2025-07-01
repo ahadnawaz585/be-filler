@@ -1,4 +1,6 @@
+
 "use client"
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,9 +33,13 @@ const CreateIrisProfile = () => {
         pin: "",
         password: "",
         bankAccounts: [{ bankName: "", iban: "" }],
-        employerName: "",
+        employerInfo: {
+            employerName: "",
+            employerAddress: "",
+            employerNTN: "",
+        },
         createdAt: "",
-        sourceOfIncome: "", // New field for source of income
+        sourceOfIncome: "",
     });
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -53,11 +59,15 @@ const CreateIrisProfile = () => {
                         phoneNumber: data.personalInfo.phoneNumber || "",
                         address: data.personalInfo.address || "",
                         pin: data.personalInfo.pin || "",
-                        password: data.personalInfo.password || "", // Avoid prefilling password in production
+                        password: data.personalInfo.password || "",
                         bankAccounts: data.bankAccounts || [{ bankName: "", iban: "" }],
-                        employerName: data.employerInfo.employerName || "",
+                        employerInfo: {
+                            employerName: data.employerInfo.employerName || "",
+                            employerAddress: data.employerInfo.employerAddress || "",
+                            employerNTN: data.employerInfo.employerNTN || "",
+                        },
                         createdAt: data.createdAt || "",
-                        sourceOfIncome: data.sourceOfIncome || "", // Prefill source of income if exists
+                        sourceOfIncome: data.sourceOfIncome || "",
                     });
                 }
             } catch (error) {
@@ -71,12 +81,19 @@ const CreateIrisProfile = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        if (name.startsWith("employerInfo.")) {
+            const field = name.split(".")[1];
+            setFormData((prev) => ({
+                ...prev,
+                employerInfo: { ...prev.employerInfo, [field]: value },
+            }));
+        } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSelectChange = (value: string) => {
         setFormData((prev) => ({ ...prev, sourceOfIncome: value }));
-        console.log(formData.sourceOfIncome)
     };
 
     const handleBankAccountChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,9 +149,17 @@ const CreateIrisProfile = () => {
     };
 
     const validateStep2 = () => {
-        const { employerName } = formData;
+        const { employerName, employerAddress, employerNTN } = formData.employerInfo;
         if (!employerName) {
             setError("Employer name is required");
+            return false;
+        }
+        if (!employerAddress) {
+            setError("Employer address is required");
+            return false;
+        }
+        if (!employerNTN || !/^\d{7}-?\d?$/.test(employerNTN.replace(/[^0-9]/g, ""))) {
+            setError("Employer NTN must be a 7 or 8-digit number");
             return false;
         }
         return true;
@@ -155,13 +180,14 @@ const CreateIrisProfile = () => {
     const handleSubmit = async () => {
         if (!validateStep1() || !validateStep2()) return;
 
-        const timestamp = new Date().toISOString(); // e.g., "2025-06-01T13:17:00.000Z" (01:17 PM PKT)
-        const { userId, ...formDataWithoutUserId } = formData as any;
-        const updatedFormData = { ...formDataWithoutUserId, createdAt: timestamp };
+        const timestamp = new Date().toISOString();
+        const updatedFormData = { ...formData, createdAt: timestamp };
 
         try {
             const user = getCurrentUser();
-            await irisProfileService.createOrUpdate({ userId: user.id, ...updatedFormData });
+            updatedFormData.userId = user.id;
+            console.log("Submitting IRIS profile:", updatedFormData);
+            await irisProfileService.createOrUpdate({ ...updatedFormData });
             toast({
                 title: "Success",
                 description: "IRIS profile created successfully",
@@ -180,32 +206,29 @@ const CreateIrisProfile = () => {
     if (loading) return <div className="text-center text-gray-600">Loading...</div>;
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-100 to-red-100 p-6">
-            <div className="mt-10 bg-white rounded-lg shadow-xl max-w-2xl w-full p-8 transition-all duration-300">
-                <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Create IRIS Profile</h2>
+        <div className="min-h-screen flex items-center justify-center bg-white p-6">
+            <div className="mt-10 bg-white rounded-xl shadow-md max-w-2xl w-full p-8 transition-all duration-300">
+                <h2 className="text-3xl font-extrabold text-[#af0e0e] mb-6 text-center tracking-tight">Create IRIS Profile</h2>
 
                 {/* Progress Indicator */}
                 <div className="flex justify-center mb-6">
                     <div className="flex items-center space-x-4">
                         <div className="flex flex-col items-center">
                             <div
-                                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold transition-all duration-300 ${step >= 1 ? "bg-red-500" : "bg-gray-300"
-                                    }`}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold transition-all duration-300 ${step >= 1 ? "bg-[#af0e0e]" : "bg-gray-300"} `}
                             >
                                 1
                             </div>
                             <span className="text-sm mt-2 text-gray-600">Personal Info</span>
                         </div>
-                        <div className="h-1 w-24 bg-gray-300 rounded">
+                        <div className="h-1 w-24 bg-gray-300 rounded mb-6">
                             <div
-                                className={`h-full rounded transition-all duration-300 ${step === 2 ? "w-full bg-red-500" : "w-0"
-                                    }`}
+                                className={`h-full rounded transition-all duration-300 ${step === 2 ? "w-full bg-[#af0e0e]" : "w-0"} `}
                             />
                         </div>
                         <div className="flex flex-col items-center">
                             <div
-                                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold transition-all duration-300 ${step === 2 ? "bg-red-500" : "bg-gray-300"
-                                    }`}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold transition-all duration-300 ${step === 2 ? "bg-[#af0e0e]" : "bg-gray-300"} `}
                             >
                                 2
                             </div>
@@ -230,7 +253,7 @@ const CreateIrisProfile = () => {
                                 value={formData.email}
                                 onChange={handleInputChange}
                                 placeholder="email@example.com"
-                                className="border-gray-300 focus:ring-2 focus:ring-red-500 transition-all duration-200"
+                                className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200"
                                 required
                             />
                         </div>
@@ -242,7 +265,7 @@ const CreateIrisProfile = () => {
                                 value={formData.phoneNumber}
                                 onChange={handleInputChange}
                                 placeholder="92300xxxxxxx"
-                                className="border-gray-300 focus:ring-2 focus:ring-red-500 transition-all duration-200"
+                                className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200"
                                 required
                             />
                         </div>
@@ -254,7 +277,7 @@ const CreateIrisProfile = () => {
                                 value={formData.address}
                                 onChange={handleInputChange}
                                 placeholder="123 Main St, Lahore"
-                                className="border-gray-300 focus:ring-2 focus:ring-red-500 transition-all duration-200"
+                                className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200"
                                 required
                             />
                         </div>
@@ -267,7 +290,7 @@ const CreateIrisProfile = () => {
                                     value={formData.pin}
                                     onChange={handleInputChange}
                                     placeholder="1234"
-                                    className="border-gray-300 focus:ring-2 focus:ring-red-500 transition-all duration-200"
+                                    className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200"
                                     required
                                 />
                             </div>
@@ -279,7 +302,7 @@ const CreateIrisProfile = () => {
                                     value={formData.password}
                                     onChange={handleInputChange}
                                     placeholder="Enter password"
-                                    className="border-gray-300 focus:ring-2 focus:ring-red-500 transition-all duration-200"
+                                    className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200"
                                     required
                                 />
                             </div>
@@ -287,7 +310,7 @@ const CreateIrisProfile = () => {
                         <div className="space-y-2">
                             <Label className="text-gray-700 font-medium">Source of Income</Label>
                             <Select onValueChange={handleSelectChange} value={formData.sourceOfIncome} required>
-                                <SelectTrigger className="border-gray-300 focus:ring-2 focus:ring-red-500 transition-all duration-200">
+                                <SelectTrigger className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200">
                                     <SelectValue placeholder="Select source of income" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -302,14 +325,14 @@ const CreateIrisProfile = () => {
                         <div className="space-y-4">
                             <Label className="text-gray-700 font-medium">Bank Accounts</Label>
                             {formData.bankAccounts.map((account, index) => (
-                                <div key={index} className="flex space-x-4 items-center bg-gray-50 p-4 rounded-md">
+                                <div key={index} className="flex space-x-4 items-center bg-white p-4 rounded-md border border-gray-200">
                                     <Input
                                         type="text"
                                         name="bankName"
                                         value={account.bankName}
                                         onChange={(e) => handleBankAccountChange(index, e)}
                                         placeholder="Bank Name"
-                                        className="border-gray-300 focus:ring-2 focus:ring-red-500 transition-all duration-200"
+                                        className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200"
                                         required
                                     />
                                     <Input
@@ -318,7 +341,7 @@ const CreateIrisProfile = () => {
                                         value={account.iban}
                                         onChange={(e) => handleBankAccountChange(index, e)}
                                         placeholder="IBAN"
-                                        className="border-gray-300 focus:ring-2 focus:ring-red-500 transition-all duration-200"
+                                        className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200"
                                         required
                                     />
                                     {formData.bankAccounts.length > 1 && (
@@ -326,7 +349,7 @@ const CreateIrisProfile = () => {
                                             type="button"
                                             variant="destructive"
                                             onClick={() => removeBankAccount(index)}
-                                            className="hover:bg-red-600 transition-all duration-200"
+                                            className="bg-[#af0e0e] hover:bg-[#8a0b0b] transition-all duration-200 rounded-full"
                                         >
                                             Remove
                                         </Button>
@@ -337,7 +360,7 @@ const CreateIrisProfile = () => {
                                 type="button"
                                 variant="outline"
                                 onClick={addBankAccount}
-                                className="w-full hover:bg-gray-100 transition-all duration-200"
+                                className="w-full border-gray-300 hover:bg-[#af0e0e]/10 text-[#af0e0e] hover:text-[#8a0b0b] transition-all duration-200 rounded-full"
                             >
                                 Add Bank Account
                             </Button>
@@ -346,7 +369,7 @@ const CreateIrisProfile = () => {
                             <Button
                                 type="button"
                                 onClick={handleNext}
-                                className="bg-red-500 hover:bg-red-600 text-white transition-all duration-200"
+                                className="bg-gradient-to-r from-[#af0e0e] to-[#8a0b0b] hover:from-[#8a0b0b] hover:to-[#6b0808] text-white transition-transform hover:scale-105 rounded-full"
                             >
                                 Next
                             </Button>
@@ -360,11 +383,35 @@ const CreateIrisProfile = () => {
                             <Label className="text-gray-700 font-medium">Employer Name</Label>
                             <Input
                                 type="text"
-                                name="employerName"
-                                value={formData.employerName}
+                                name="employerInfo.employerName"
+                                value={formData.employerInfo.employerName}
                                 onChange={handleInputChange}
                                 placeholder="Company Name"
-                                className="border-gray-300 focus:ring-2 focus:ring-red-500 transition-all duration-200"
+                                className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-gray-700 font-medium">Employer Address</Label>
+                            <Input
+                                type="text"
+                                name="employerInfo.employerAddress"
+                                value={formData.employerInfo.employerAddress}
+                                onChange={handleInputChange}
+                                placeholder="Company Address, City"
+                                className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-gray-700 font-medium">Employer NTN</Label>
+                            <Input
+                                type="text"
+                                name="employerInfo.employerNTN"
+                                value={formData.employerInfo.employerNTN}
+                                onChange={handleInputChange}
+                                placeholder="1234567-8"
+                                className="border-gray-300 focus:ring-2 focus:ring-[#af0e0e] rounded-md transition-all duration-200"
                                 required
                             />
                         </div>
@@ -373,14 +420,14 @@ const CreateIrisProfile = () => {
                                 type="button"
                                 variant="outline"
                                 onClick={handleBack}
-                                className="hover:bg-gray-100 transition-all duration-200"
+                                className="border-gray-300 hover:bg-[#af0e0e]/10 text-[#af0e0e] hover:text-[#8a0b0b] transition-all duration-200 rounded-full"
                             >
                                 Back
                             </Button>
                             <Button
                                 type="button"
                                 onClick={handleSubmit}
-                                className="bg-red-500 hover:bg-red-600 text-white transition-all duration-200"
+                                className="bg-gradient-to-r from-[#af0e0e] to-[#8a0b0b] hover:from-[#8a0b0b] hover:to-[#6b0808] text-white transition-transform hover:scale-105 rounded-full"
                             >
                                 Submit
                             </Button>

@@ -48,12 +48,11 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    // For development - bypass authentication and use mock user
     const cookieData = getCurrentUser()
     if (!cookieData) {
-      // Cookies.remove('user')
-      // Cookies.remove('token')
-      // router.push('/auth/login')
+      Cookies.remove('user')
+      Cookies.remove('token')
+      router.push('/auth/login')
     }
     setUser(cookieData);
     const fetchTaxFilings = async () => {

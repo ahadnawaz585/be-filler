@@ -29,7 +29,11 @@ export interface CreateIrisProfileDto {
     pin: string;
     password: string;
     bankAccounts: IBankAccount[];
-    employerName: string;
+    employerInfo: {
+        employerName: string;
+        employerNTN: string; // Optional field for employer's NTN
+        employerAddress: string; // Optional field for employer's address
+    }
     sourceOfIncome: string;
     createdAt: string;
 }
@@ -61,7 +65,9 @@ export class IrisProfileService extends BaseService {
                 address: data.address
             },
             employerInfo: {
-                employerName: data.employerName
+                employerName: data.employerInfo.employerName,
+                employerNTN: data.employerInfo?.employerNTN || '',
+                employerAddress: data.employerInfo.employerAddress // Optional field
             },
             bankAccounts: data.bankAccounts,
             sourceOfIncome: data.sourceOfIncome

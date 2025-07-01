@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, JSX } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -35,6 +36,7 @@ import { ChevronDown, ChevronUp, Search, Copy, FileText, Download, Save, X } fro
 import { TaxFilingService, ITaxFiling, UpdateFilingStatusDto } from "@/services/taxFiling.service"
 import { UserServices } from "@/services/user.service"
 import { getCurrentUser } from "@/lib/auth"
+import { Badge } from "@/components/ui/badge"
 import Unauthorized from "@/components/Unauthorized"
 
 interface ExtendedUpdateFilingStatusDto extends UpdateFilingStatusDto {
@@ -69,7 +71,7 @@ export default function TaxFilingDetails() {
     const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
 
     const user = getCurrentUser();
-    if (user?.role !== 'admin') {
+    if (user.role !== 'admin') {
         return <Unauthorized />
     }
 
@@ -116,7 +118,7 @@ export default function TaxFilingDetails() {
         const fetchUserSuggestions = async () => {
             if (statusUpdate.fullName && statusUpdate.fullName.length > 2) {
                 try {
-                    const userService = new UserService()
+                    const userService = new UserServices()
                     const users = await userService.search(statusUpdate.fullName)
                     setUserSuggestions(users || [])
                     setIsSuggestionsOpen(true)
@@ -208,19 +210,119 @@ export default function TaxFilingDetails() {
         }
     }
 
+    const formatCurrency = (value: string | number) => {
+        if (!value) return "N/A"
+        const numericValue = typeof value === 'number' ? value : parseFloat(value.replace(/[^\d]/g, ""))
+        return isNaN(numericValue) ? "N/A" : `PKR ${numericValue.toLocaleString()} `
+    }
+
     const renderNestedObject = (obj: any, depth: number = 0, sectionKey?: string): JSX.Element => {
         if (!obj || typeof obj !== "object") {
             return <span className="text-sm text-gray-700">{obj?.toString() || "N/A"}</span>
         }
 
+        if (sectionKey === "incomes" && obj.businessEntries && Array.isArray(obj.businessEntries)) {
+            return (
+                <div className="space-y-4">
+                    <div className="font-medium text-sm text-gray-900">Business Entries</div>
+                    {obj.businessEntries.length > 0 ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            {obj.businessEntries.map((entry: any, index: number) => (
+                                <div
+                                    key={entry.id || index}
+                                    className="border rounded-lg p-3 bg-white shadow-sm"
+                                >
+                                    <div className="space-y-2">
+                                        <div className="font-medium text-sm">{entry.businessName || "Unnamed Business"}</div>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-xs">
+                                                {entry.businessType || "N/A"}
+                                            </Badge>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            <div>
+                                                <span className="text-muted-foreground">Annual Income:</span>
+                                                <div className="font-medium">{formatCurrency(entry.businessIncome)}</div>
+                                            </div>
+                                            <div>
+                                                <span className="text-muted-foreground">Expenses:</span>
+                                                <div className="font-medium">{formatCurrency(entry.businessExpenses)}</div>
+                                            </div>
+                                            <div>
+                                                <span className="text-muted-foreground">Net Income:</span>
+                                                <div className="font-medium text-green-600">
+                                                    {formatCurrency(Number(entry.businessIncome) - Number(entry.businessExpenses))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleCopy(JSON.stringify(entry, null, 2))}
+                                            className="text-[#af0e0e]"
+                                        >
+                                            <Copy className="h-4 w-4 mr-1" />
+                                            Copy Entry
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500">No business entries provided</p>
+                    )}
+                    {obj.otherIncomeInflows && Array.isArray(obj.otherIncomeInflows) && (
+                        <>
+                            <div className="font-medium text-sm text-gray-900 mt-4">Other Income Inflows</div>
+                            {obj.otherIncomeInflows.length > 0 ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                    {obj.otherIncomeInflows.map((inflow: any, index: number) => (
+                                        <div
+                                            key={inflow.id || index}
+                                            className="border rounded-lg p-3 bg-white shadow-sm"
+                                        >
+                                            <div className="space-y-2">
+                                                <div className="font-medium text-sm capitalize">{inflow.type || "N/A"}</div>
+                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                    <div>
+                                                        <span className="text-muted-foreground">Amount:</span>
+                                                        <div className="font-medium">{formatCurrency(inflow.amount)}</div>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-muted-foreground">Description:</span>
+                                                        <div className="font-medium">{inflow.description || "N/A"}</div>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleCopy(JSON.stringify(inflow, null, 2))}
+                                                    className="text-[#af0e0e]"
+                                                >
+                                                    <Copy className="h-4 w-4 mr-1" />
+                                                    Copy Inflow
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-500">No other income inflows provided</p>
+                            )}
+                        </>
+                    )}
+                </div>
+            )
+        }
+
         return (
-            <div className={`space-y-2 ${depth > 0 ? "ml-6" : ""}`}>
+            <div className={`space - y - 2 ${depth > 0 ? "ml-6" : ""} `}>
                 {Object.entries(obj).map(([key, value]) => (
                     <div key={key} className="grid grid-cols-[150px_1fr] gap-4 items-start">
                         <span className="font-medium text-sm text-gray-900 capitalize truncate">
                             {key.replace(/([A-Z])/g, " $1").trim()}:
                         </span>
-                        {Array.isArray(value) ? (
+                        {Array.isArray(value) && key !== "businessEntries" && key !== "otherIncomeInflows" ? (
                             <div className="space-y-2">
                                 {value.map((item, index) => (
                                     <div key={index} className="text-sm">
@@ -242,7 +344,7 @@ export default function TaxFilingDetails() {
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => handleCopy(value.toString())}
-                                                    aria-label={`Copy ${key}`}
+                                                    aria-label={`Copy ${key} `}
                                                 >
                                                     <Copy className="h-4 w-4 text-[#af0e0e]" />
                                                 </Button>
@@ -299,14 +401,14 @@ export default function TaxFilingDetails() {
     return (
         <div className="container px-4 mx-auto py-8 mt-16">
             <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .fade-in {
-          animation: fadeIn 0.3s ease-out;
-        }
-      `}</style>
+@keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+}
+                .fade -in {
+    animation: fadeIn 0.3s ease- out;
+                }
+`}</style>
             <div className="mb-8">
                 <h1 className="text-3xl font-bold tracking-tight text-gray-900">Tax Filing Details</h1>
                 <p className="text-gray-500 text-sm mt-1">
@@ -401,10 +503,23 @@ export default function TaxFilingDetails() {
                                                     <Label className="text-sm font-medium text-gray-900">Income Type</Label>
                                                     <p className="text-sm text-gray-700 capitalize">{income.type}</p>
                                                 </div>
-                                                <div>
-                                                    <Label className="text-sm font-medium text-gray-900">Details</Label>
-                                                    {renderNestedObject(income.details, 0, "incomes")}
-                                                </div>
+                                                {income.type === "business" ? (
+                                                    <>
+                                                        <div>
+                                                            {/* <Label className="text-sm font-medium text-gray-900">Business Entries</Label> */}
+                                                            {renderNestedObject({ businessEntries: income.businessEntries, otherIncomeInflows: income.otherIncomeInflows }, 0, "incomes")}
+                                                        </div>
+                                                        <div>
+                                                            {/* <Label className="text-sm font-medium text-gray-900">Details</Label> */}
+                                                            {/* {renderNestedObject(income.details, 0, "incomes")} */}
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div>
+                                                        {/* <Label className="text-sm font-medium text-gray-900">Details</Label>
+                                                        {renderNestedObject(income.details, 0, "incomes")} */}
+                                                    </div>
+                                                )}
                                             </div>
                                         </TabsContent>
                                     ))}
@@ -587,7 +702,7 @@ export default function TaxFilingDetails() {
                                                             variant="ghost"
                                                             size="sm"
                                                             onClick={() => handleCopy(doc)}
-                                                            aria-label={`Copy document ${doc}`}
+                                                            aria-label={`Copy document ${doc} `}
                                                         >
                                                             <Copy className="h-4 w-4 text-[#af0e0e]" />
                                                         </Button>
@@ -605,7 +720,7 @@ export default function TaxFilingDetails() {
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 onClick={() => window.open(doc, "_blank")}
-                                                                aria-label={`Download document ${doc}`}
+                                                                aria-label={`Download document ${doc} `}
                                                             >
                                                                 <Download className="h-4 w-4 text-[#af0e0e]" />
                                                             </Button>
@@ -688,7 +803,6 @@ export default function TaxFilingDetails() {
                                     </Label>
                                     <div className="relative">
                                         <Input
-                                            disabled
                                             id="assignedTo"
                                             value={statusUpdate.fullName || ""}
                                             onChange={(e) =>
@@ -762,7 +876,7 @@ export default function TaxFilingDetails() {
                     <div className="flex justify-end">
                         <Button
                             variant="outline"
-                            onClick={() => router.push("/admin/tax-filing")}
+                            onClick={() => router.push("/accountant/tax-filing")}
                             className="text-[#af0e0e] border-[#af0e0e] hover:bg-[#af0e0e] hover:text-white transition-all duration-200 hover:scale-105"
                         >
                             Back to Filings
