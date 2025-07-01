@@ -21,6 +21,8 @@ import ReviewSubmitStep from "@/components/personal-tax-filing/review-submit-ste
 import { TaxFilingService } from "@/services/taxFiling.service"
 import { toast } from "@/components/ui/use-toast"
 import { BankDetailsStep } from "@/components/personal-tax-filing/bank-details-step"
+import { UserServices } from "@/services/user.service"
+import { getCurrentUser } from "@/lib/auth"
 
 // Define interfaces matching engine schema
 interface BankTransaction {
@@ -408,6 +410,7 @@ export default function PersonalTaxFiling() {
         await ts.step2(taxFilingId, { incomes: formData.incomes })
       }
       if (currentStep === 4) {
+        console.log("Saving income details:", formData.incomes)
         await ts.step2(taxFilingId, {
           incomes: formData.incomes
         })
@@ -496,6 +499,12 @@ export default function PersonalTaxFiling() {
       // }
       if (currentStep === 13) {
         await ts.submitFiling(taxFilingId)
+        const us = new UserServices()
+        const user = getCurrentUser();
+        const usr = await us.getById(user.id)
+        await us.update(user.id, {
+          serviceCharges: [...(usr.serviceCharges || []), "6837900b3f4e55b8472a0b54"]
+        })
         toast({
           title: "Success",
           description: "Tax filing submitted successfully.",

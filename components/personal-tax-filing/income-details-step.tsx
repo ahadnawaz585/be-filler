@@ -42,16 +42,17 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
       const res = await ts.getStep(filingId, '2');
       console.log('Raw API response:', JSON.stringify(res, null, 2));
 
-      // Process incomes to ensure all expected fields exist
       const processedIncomes = (res.incomes || []).map((income: any) => {
         if (income.type === 'business') {
           return {
             ...income,
-            details: {
-              businessIncome: income.details?.businessIncome || '',
-              businessExpenses: income.details?.businessExpenses || '',
-              businessType: income.details?.businessType || ''
-            }
+            businessEntries: income.businessEntries || []
+          }
+        }
+        if (income.type === 'other') {
+          return {
+            ...income,
+            otherIncomeInflows: income.otherIncomeInflows || []
           }
         }
         return income
@@ -60,17 +61,14 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
       console.log('Processed incomes:', processedIncomes)
       setStepDataFromAPI(processedIncomes)
 
-      // Extract income sources from incomes array
       if (processedIncomes && processedIncomes.length > 0) {
         const incomeSourceTypes = processedIncomes.map((income: any) => income.type);
         console.log("Extracted income source types:", incomeSourceTypes);
 
-        // Always populate form data from API response
         handleInputChange("incomeSources", incomeSourceTypes);
         handleInputChange("incomes", processedIncomes);
       }
 
-      // Handle any other fields that might come from the API
       Object.keys(res).forEach(key => {
         if (key !== 'incomes' && res[key]) {
           handleInputChange(key, res[key]);
@@ -124,101 +122,189 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
     console.log('=== DEBUG getIncomeDetails ===')
     console.log('Type:', type)
 
-    // Initialize details to prevent undefined errors
     let details = {};
+    let businessEntries = [];
+    let otherIncomeInflows = [];
 
-    // Try to get from stepDataFromAPI
     const apiIncome = stepDataFromAPI.find((inc: any) => inc.type === type)
-
     console.log('API Income found:', !!apiIncome)
     console.log('Raw apiIncome:', JSON.stringify(apiIncome, null, 2))
 
-    if (apiIncome && apiIncome.details) {
-      details = { ...apiIncome.details }
-      console.log('Using API details:', details)
+    if (apiIncome) {
+      details = { ...apiIncome.details } || {};
+      businessEntries = apiIncome.businessEntries || [];
+      otherIncomeInflows = apiIncome.otherIncomeInflows || [];
+      console.log('Using API details:', details, 'businessEntries:', businessEntries, 'otherIncomeInflows:', otherIncomeInflows)
     } else {
-      // Fallback to formData
       const formIncome = (formData.incomes || []).find((inc: any) => inc.type === type)
-      details = formIncome ? { ...formIncome.details } : {}
-      console.log('Using form details:', details)
+      details = formIncome ? { ...formIncome.details } : {};
+      businessEntries = formIncome ? formIncome.businessEntries || [] : [];
+      otherIncomeInflows = formIncome ? formIncome.otherIncomeInflows || [] : [];
+      console.log('Using form details:', details, 'businessEntries:', businessEntries, 'otherIncomeInflows:', otherIncomeInflows)
     }
 
-    // Ensure business type has default structure
     if (type === 'business') {
       console.log('Business details before processing:', details)
       details = {
-        businessIncome: details.businessIncome || '',
-        businessExpenses: details.businessExpenses || '',
-        businessType: details.businessType || '',
+        newBusinessIncome: details.newBusinessIncome || '',
+        newBusinessExpenses: details.newBusinessExpenses || '',
+        newBusinessType: details.newBusinessType || '',
+        newBusinessName: details.newBusinessName || '',
         ...details
       }
       console.log('Business details after processing:', details)
-      console.log('businessIncome value:', details.businessIncome)
-      console.log('businessType value:', details.businessType)
+    } else if (type === 'other') {
+      console.log('Other income details before processing:', details)
+      details = {
+        newInflowType: details.newInflowType || '',
+        newInflowAmount: details.newInflowAmount || '',
+        newInflowDescription: details.newInflowDescription || '',
+        ...details
+      }
+      console.log('Other income details after processing:', details)
     }
 
-    console.log('Final details returned:', details)
+    console.log('Final details returned:', { details, businessEntries, otherIncomeInflows })
     console.log('=== END DEBUG ===')
 
-    return details
+    return { details, businessEntries, otherIncomeInflows }
   }
 
-  const updateIncomeDetails = (type: string, field: string, value: any) => {
+  const updateIncomeDetails = (type: string, field: string | Record<string, any>, value?: any) => {
     console.log('=== updateIncomeDetails ENHANCED DEBUG ===')
     console.log('Type:', type, 'Field:', field, 'Value:', value)
-    console.log('Value type:', typeof value)
 
-    // Update formData
     const incomes = formData.incomes || []
     console.log('Current formData.incomes BEFORE update:', JSON.stringify(incomes, null, 2))
 
     const incomeIndex = incomes.findIndex((inc: any) => inc.type === type)
     let updatedIncomes = [...incomes]
 
-    if (incomeIndex === -1) {
-      console.log('Creating new income entry for type:', type)
-      updatedIncomes.push({ type, details: { [field]: value } })
-    } else {
-      console.log('Updating existing income entry at index:', incomeIndex)
-      console.log('Existing details BEFORE:', JSON.stringify(incomes[incomeIndex].details, null, 2))
-
-      updatedIncomes[incomeIndex] = {
-        ...incomes[incomeIndex],
-        details: { ...incomes[incomeIndex].details, [field]: value },
+    if (typeof field === 'object') {
+      // Handle batch updates (e.g., for adding business entry or inflows and resetting form)
+      const newDetails = { ...field.details || {} }
+      const newBusinessEntries = field.businessEntries || (incomeIndex !== -1 ? incomes[incomeIndex].businessEntries : [])
+      const newOtherIncomeInflows = field.otherIncomeInflows || (incomeIndex !== -1 ? incomes[incomeIndex].otherIncomeInflows : [])
+      if (incomeIndex === -1) {
+        updatedIncomes.push({
+          type,
+          details: newDetails,
+          businessEntries: newBusinessEntries,
+          otherIncomeInflows: newOtherIncomeInflows
+        })
+      } else {
+        updatedIncomes[incomeIndex] = {
+          ...incomes[incomeIndex],
+          details: { ...incomes[incomeIndex].details, ...newDetails },
+          businessEntries: newBusinessEntries,
+          otherIncomeInflows: newOtherIncomeInflows
+        }
       }
-
-      console.log('Updated details AFTER:', JSON.stringify(updatedIncomes[incomeIndex].details, null, 2))
+    } else if (field === 'businessEntries' || field === 'otherIncomeInflows') {
+      // Handle direct array updates (e.g., for deletion)
+      if (incomeIndex === -1) {
+        updatedIncomes.push({
+          type,
+          details: {},
+          businessEntries: field === 'businessEntries' ? value : [],
+          otherIncomeInflows: field === 'otherIncomeInflows' ? value : []
+        })
+      } else {
+        updatedIncomes[incomeIndex] = {
+          ...incomes[incomeIndex],
+          businessEntries: field === 'businessEntries' ? value : incomes[incomeIndex].businessEntries || [],
+          otherIncomeInflows: field === 'otherIncomeInflows' ? value : incomes[incomeIndex].otherIncomeInflows || []
+        }
+      }
+    } else {
+      // Single field update
+      if (incomeIndex === -1) {
+        updatedIncomes.push({
+          type,
+          details: { [field]: value },
+          businessEntries: [],
+          otherIncomeInflows: []
+        })
+      } else {
+        updatedIncomes[incomeIndex] = {
+          ...incomes[incomeIndex],
+          details: { ...incomes[incomeIndex].details, [field]: value },
+          businessEntries: incomes[incomeIndex].businessEntries || [],
+          otherIncomeInflows: incomes[incomeIndex].otherIncomeInflows || []
+        }
+      }
     }
 
-    console.log('Final updatedIncomes being sent to handleInputChange:', JSON.stringify(updatedIncomes, null, 2))
-
+    console.log('Updated incomes:', JSON.stringify(updatedIncomes, null, 2))
     handleInputChange("incomes", updatedIncomes)
 
-    // Update stepDataFromAPI
     const apiIncomes = [...(stepDataFromAPI || [])]
     const apiIncomeIndex = apiIncomes.findIndex((inc: any) => inc.type === type)
 
-    if (apiIncomeIndex === -1) {
-      apiIncomes.push({ type, details: { [field]: value } })
+    if (typeof field === 'object') {
+      const newDetails = { ...field.details || {} }
+      const newBusinessEntries = field.businessEntries || (apiIncomeIndex !== -1 ? apiIncomes[apiIncomeIndex].businessEntries : [])
+      const newOtherIncomeInflows = field.otherIncomeInflows || (apiIncomeIndex !== -1 ? apiIncomes[apiIncomeIndex].otherIncomeInflows : [])
+      if (apiIncomeIndex === -1) {
+        apiIncomes.push({
+          type,
+          details: newDetails,
+          businessEntries: newBusinessEntries,
+          otherIncomeInflows: newOtherIncomeInflows
+        })
+      } else {
+        apiIncomes[apiIncomeIndex] = {
+          ...apiIncomes[apiIncomeIndex],
+          details: { ...apiIncomes[apiIncomeIndex].details, ...newDetails },
+          businessEntries: newBusinessEntries,
+          otherIncomeInflows: newOtherIncomeInflows
+        }
+      }
+    } else if (field === 'businessEntries' || field === 'otherIncomeInflows') {
+      if (apiIncomeIndex === -1) {
+        apiIncomes.push({
+          type,
+          details: {},
+          businessEntries: field === 'businessEntries' ? value : [],
+          otherIncomeInflows: field === 'otherIncomeInflows' ? value : []
+        })
+      } else {
+        apiIncomes[apiIncomeIndex] = {
+          ...apiIncomes[apiIncomeIndex],
+          businessEntries: field === 'businessEntries' ? value : apiIncomes[apiIncomeIndex].businessEntries || [],
+          otherIncomeInflows: field === 'otherIncomeInflows' ? value : apiIncomes[apiIncomeIndex].otherIncomeInflows || []
+        }
+      }
     } else {
-      apiIncomes[apiIncomeIndex] = {
-        ...apiIncomes[apiIncomeIndex],
-        details: { ...apiIncomes[apiIncomeIndex].details, [field]: value },
+      if (apiIncomeIndex === -1) {
+        apiIncomes.push({
+          type,
+          details: { [field]: value },
+          businessEntries: [],
+          otherIncomeInflows: []
+        })
+      } else {
+        apiIncomes[apiIncomeIndex] = {
+          ...apiIncomes[apiIncomeIndex],
+          details: { ...apiIncomes[apiIncomeIndex].details, [field]: value },
+          businessEntries: apiIncomes[apiIncomeIndex].businessEntries || [],
+          otherIncomeInflows: apiIncomes[apiIncomeIndex].otherIncomeInflows || []
+        }
       }
     }
 
-    setStepDataFromAPI(apiIncomes)
     console.log('Updated stepDataFromAPI:', JSON.stringify(apiIncomes, null, 2))
+    setStepDataFromAPI(apiIncomes)
     console.log('=== END updateIncomeDetails ENHANCED DEBUG ===')
   }
 
   const isIncomeSourceCompleted = (sourceId: string) => {
-    const details: any = getIncomeDetails(sourceId)
+    const { details, businessEntries, otherIncomeInflows } = getIncomeDetails(sourceId)
     switch (sourceId) {
       case "salary":
         return !!(details?.annualSalary && details?.taxDeducted)
       case "business":
-        return !!(details?.businessIncome && details?.businessType)
+        return !!(businessEntries && businessEntries.length > 0)
       case "freelancer":
         return !!details?.freelancerIncome
       case "professional":
@@ -247,7 +333,7 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
       case "dividend":
         return !!(details?.dividendIncome || details?.capitalGain)
       case "other":
-        return !!(details?.otherIncomeInflows && details?.otherIncomeInflows?.length > 0)
+        return !!(otherIncomeInflows && otherIncomeInflows.length > 0)
       default:
         return false
     }
@@ -270,7 +356,7 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
   }
 
   const renderIncomeSection = (sourceId: string, title: string) => {
-    const details = getIncomeDetails(sourceId)
+    const { details, businessEntries, otherIncomeInflows } = getIncomeDetails(sourceId)
 
     switch (sourceId) {
       case "salary":
@@ -301,46 +387,163 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
 
       case "business":
         return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="businessIncome">Annual Business Income (PKR)</Label>
+          <div className="space-y-6">
+            <div className="border rounded-lg p-4 bg-blue-50/50">
+              <h4 className="font-medium mb-4 text-blue-900">Add New Business</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newBusinessIncome">Annual Business Income (PKR)</Label>
+                  <Input
+                    id="newBusinessIncome"
+                    value={formatCurrency(details.newBusinessIncome || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "newBusinessIncome", handleCurrencyInput("newBusinessIncome", e.target.value))}
+                    placeholder="Enter business income"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newBusinessExpenses">Business Expenses (PKR)</Label>
+                  <Input
+                    id="newBusinessExpenses"
+                    value={formatCurrency(details.newBusinessExpenses || "")}
+                    onChange={(e) => updateIncomeDetails(sourceId, "newBusinessExpenses", handleCurrencyInput("newBusinessExpenses", e.target.value))}
+                    placeholder="Enter business expenses"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2 mt-4">
+                <Label htmlFor="newBusinessType">Type of Business</Label>
+                <Select
+                  onValueChange={(value) => updateIncomeDetails(sourceId, "newBusinessType", value)}
+                  value={details.newBusinessType || ""}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select business type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="trader">Trader</SelectItem>
+                    <SelectItem value="manufacturer">Manufacturer</SelectItem>
+                    <SelectItem value="dealer">Dealer</SelectItem>
+                    <SelectItem value="wholesaler">Wholesaler</SelectItem>
+                    <SelectItem value="importer">Importer</SelectItem>
+                    <SelectItem value="exporter">Exporter</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 mt-4">
+                <Label htmlFor="newBusinessName">Business Name</Label>
                 <Input
-                  id="businessIncome"
-                  value={formatCurrency(details.businessIncome || "")}
-                  onChange={(e) => updateIncomeDetails(sourceId, "businessIncome", handleCurrencyInput("businessIncome", e.target.value))}
-                  placeholder="Enter business income"
+                  id="newBusinessName"
+                  value={details.newBusinessName || ""}
+                  onChange={(e) => updateIncomeDetails(sourceId, "newBusinessName", e.target.value)}
+                  placeholder="Enter business name"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="businessExpenses">Business Expenses (PKR)</Label>
-                <Input
-                  id="businessExpenses"
-                  value={formatCurrency(details.businessExpenses || "")}
-                  onChange={(e) => updateIncomeDetails(sourceId, "businessExpenses", handleCurrencyInput("businessExpenses", e.target.value))}
-                  placeholder="Enter business expenses"
-                />
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (details.newBusinessIncome && details.newBusinessType && details.newBusinessName) {
+                      const newBusinessEntry = {
+                        id: Date.now().toString(),
+                        businessIncome: details.newBusinessIncome,
+                        businessExpenses: details.newBusinessExpenses || "0",
+                        businessType: details.newBusinessType,
+                        businessName: details.newBusinessName
+                      }
+                      const updatedDetails = {
+                        details: {
+                          newBusinessIncome: "",
+                          newBusinessExpenses: "",
+                          newBusinessType: "",
+                          newBusinessName: ""
+                        },
+                        businessEntries: [...businessEntries, newBusinessEntry]
+                      }
+                      updateIncomeDetails(sourceId, updatedDetails)
+                      console.log('Added new business entry:', newBusinessEntry)
+                      console.log('Updated businessEntries:', updatedDetails.businessEntries)
+                    }
+                  }}
+                  disabled={!details.newBusinessIncome || !details.newBusinessType || !details.newBusinessName}
+                  className="w-full md:w-auto"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Business
+                </Button>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="businessType">Type of Business</Label>
-              <Select
-                onValueChange={(value) => updateIncomeDetails(sourceId, "businessType", value)}
-                value={details.businessType || ""}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select business type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="trader">Trader</SelectItem>
-                  <SelectItem value="manufacturer">Manufacturer</SelectItem>
-                  <SelectItem value="Dealer">Dealer</SelectItem>
-                  <SelectItem value="wholeslaer">Wholesaler</SelectItem>
-                  <SelectItem value="importer">Importer</SelectItem>
-                  <SelectItem value="exporter">Exporter</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {businessEntries && businessEntries.length > 0 ? (
+              <div className="space-y-3">
+                <h4 className="font-medium">Added Businesses</h4>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {businessEntries.map((entry: any) => (
+                    <div
+                      key={entry.id}
+                      className="border rounded-lg p-3 bg-white relative group hover:shadow-md transition-shadow"
+                    >
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => {
+                          const updatedEntries = businessEntries.filter(
+                            (item: any) => item.id !== entry.id
+                          )
+                          updateIncomeDetails(sourceId, "businessEntries", updatedEntries)
+                          console.log('Removed business entry:', entry.id)
+                          console.log('Updated businessEntries:', updatedEntries)
+                        }}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                      <div className="space-y-2 pr-6">
+                        <div className="font-medium text-sm line-clamp-1">{entry.businessName}</div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline" className="text-xs">
+                            {entry.businessType}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-muted-foreground">Annual Income:</span>
+                            <div className="font-medium">PKR {Number(entry.businessIncome).toLocaleString()}</div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Expenses:</span>
+                            <div className="font-medium">PKR {Number(entry.businessExpenses).toLocaleString()}</div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Net Income:</span>
+                            <div className="font-medium text-green-600">
+                              PKR {(Number(entry.businessIncome) - Number(entry.businessExpenses)).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-medium">Total Business Income:</span>
+                    <span className="font-semibold">
+                      PKR{" "}
+                      {businessEntries
+                        .reduce((total: number, entry: any) => total + (Number(entry.businessIncome) - Number(entry.businessExpenses)), 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
+                <div className="space-y-2">
+                  <div className="text-sm">No businesses added yet</div>
+                  <div className="text-xs">Add your first business using the form above</div>
+                </div>
+              </div>
+            )}
           </div>
         )
 
@@ -1103,7 +1306,7 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                             purchasePrice: details.newSalePurchasePrice,
                             salePrice: details.newSaleSalePrice,
                             holdingPeriod: details.newSaleHoldingPeriod,
-                            gain: Number(details.newSalelaborSaleSalePrice) - Number(details.newSalePurchasePrice),
+                            gain: Number(details.newSaleSalePrice) - Number(details.newSalePurchasePrice),
                           }
                           const currentEntries = details.propertySaleEntries || []
                           updateIncomeDetails(sourceId, "propertySaleEntries", [...currentEntries, newSaleEntry])
@@ -1541,8 +1744,7 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                   className="bg-[#af0e0e] h-2 rounded-full transition-all duration-300"
                   style={{
                     width: `${(selectedIncomeSources.filter((sourceId: string) => isIncomeSourceCompleted(sourceId)).length /
-                      selectedIncomeSources.length) *
-                      100
+                      selectedIncomeSources.length) * 100
                       }%`,
                   }}
                 />
@@ -1573,16 +1775,17 @@ export function IncomeDetailsStep({ formData, handleInputChange }: IncomeDetails
                 disabled={currentIncomeIndex === 0}
                 className="flex items-center"
               >
-                <ChevronLeft className="h-4 w-4 mr-2" />
+                <ChevronLeft className="w-4 h-4 mr-2" />
                 Previous Income
               </Button>
               <Button
+                variant="outline"
                 onClick={handleNextIncome}
                 disabled={currentIncomeIndex === selectedIncomeSources.length - 1}
                 className="flex items-center"
               >
                 Next Income
-                <ChevronRight className="h-4 w-4 ml-2" />
+                <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           </CardContent>
